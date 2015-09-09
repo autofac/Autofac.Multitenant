@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security;
@@ -40,7 +41,7 @@ namespace Autofac.Extras.Multitenant
         /// </returns>
         public Action<ContainerBuilder> Build()
         {
-            var list = this.AsReadOnly();
+            var list = new ReadOnlyCollection<Action<ContainerBuilder>>(this);
             if (list.Count == 0)
             {
                 return (ContainerBuilder b) => { };

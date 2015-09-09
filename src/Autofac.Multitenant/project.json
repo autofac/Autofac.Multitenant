@@ -26,14 +26,13 @@
         "dnx451": {},
         "dotnet": {
             "dependencies": {
+                "System.Runtime": "4.0.21-beta-*"
             }
         },
-        "net45":{
-            "frameworkAssemblies": {
-            }
-        },
+        "net45":{},
         "netcore45":{
             "frameworkAssemblies": {
+                "System.Runtime": ""
             }
         }
     }

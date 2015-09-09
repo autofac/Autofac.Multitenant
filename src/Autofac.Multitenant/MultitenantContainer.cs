@@ -91,14 +91,20 @@ namespace Autofac.Extras.Multitenant
         /// is <see cref="System.Object"/>, value is <see cref="Autofac.ILifetimeScope"/>.
         /// </summary>
         /// <remarks>
-        /// Using <see cref="System.Collections.Hashtable"/> rather than 
+        /// Using <see cref="System.Collections.Hashtable"/> rather than
         /// a generic dictionary because dictionaries aren't threadsafe even with
         /// the lock/double-check. Doesn't have to be a synchronized hashtable
         /// since we're managing the write operations internally with our own locks.
         /// </remarks>
         /// <seealso href="http://stackoverflow.com/questions/2624301/how-to-show-that-the-double-checked-lock-pattern-with-dictionarys-trygetvalue-is"/>
         // Issue #280: Incorrect double-checked-lock pattern usage in MultitenantContainer.GetTenantScope
-        private readonly Hashtable _tenantLifetimeScopes = new Hashtable();
+        private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new Dictionary<object, ILifetimeScope>();
+
+        /// <summary>
+        /// Synchronization primitive for locking modifications and initializations
+        /// of tenant scopes.
+        /// </summary>
+        private readonly object _tenantLifetimeScopeSyncRoot = new object();
 
         /// <summary>
         /// Gets the base application container.
@@ -331,7 +337,7 @@ namespace Autofac.Extras.Multitenant
             // Skipping a read/lock/double-check here since ConfigureTenant
             // doesn't get called often and is OK to block. Jump straight to
             // the lock before read.
-            lock (this._tenantLifetimeScopes.SyncRoot)
+            lock (this._tenantLifetimeScopeSyncRoot)
             {
                 // The check and [potential] scope creation are locked here to
                 // ensure atomicity. We don't want to check and then have another
@@ -340,6 +346,7 @@ namespace Autofac.Extras.Multitenant
                 {
                     throw new InvalidOperationException(String.Format(CultureInfo.CurrentUICulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
                 }
+
                 this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
             }
         }
@@ -357,13 +364,14 @@ namespace Autofac.Extras.Multitenant
             {
                 // Lock the lifetime scope table so no threads can add new lifetime
                 // scopes while we're disposing.
-                lock (this._tenantLifetimeScopes.SyncRoot)
+                lock (this._tenantLifetimeScopeSyncRoot)
                 {
                     foreach (ILifetimeScope scope in this._tenantLifetimeScopes.Values)
                     {
                         scope.Dispose();
                     }
                 }
+
                 this.ApplicationContainer.Dispose();
             }
             base.Dispose(disposing);
@@ -388,6 +396,7 @@ namespace Autofac.Extras.Multitenant
             {
                 return this.GetTenantScope(tenantId);
             }
+
             return this.GetTenantScope(null);
         }
 
@@ -406,23 +415,22 @@ namespace Autofac.Extras.Multitenant
                 tenantId = this._defaultTenantId;
             }
 
-            object tenantScope = this._tenantLifetimeScopes[tenantId];
-            if (tenantScope == null)
+            ILifetimeScope tenantScope = null;
+            if (!this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
             {
-                lock (this._tenantLifetimeScopes.SyncRoot)
+                lock (this._tenantLifetimeScopeSyncRoot)
                 {
                     // The check and [potential] scope creation are locked here to
                     // ensure atomicity. We don't want to check and then have another
                     // thread create the lifetime scope behind our backs.
-                    tenantScope = this._tenantLifetimeScopes[tenantId];
-                    if (tenantScope == null)
+                    if (!this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
                     {
                         tenantScope = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
                         this._tenantLifetimeScopes[tenantId] = tenantScope;
                     }
                 }
             }
-            return (ILifetimeScope)tenantScope;
+            return tenantScope;
         }
 
         /// <summary>

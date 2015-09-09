@@ -2,14 +2,13 @@
 using Autofac;
 using Autofac.Extras.Multitenant;
 using Autofac.Extras.Tests.Multitenant.Stubs;
-using NUnit.Framework;
+using Xunit;
 
 namespace Autofac.Extras.Tests.Multitenant
 {
-    [TestFixture]
     public class TenantIdentificationStrategyExtensionsFixture
     {
-        [Test(Description = "Retrieves the tenant ID but tries to convert to the wrong type.")]
+        [Fact]
         public void IdentifyTenant_FailedConversion()
         {
             var strategy = new StubTenantIdentificationStrategy
@@ -19,24 +18,24 @@ namespace Autofac.Extras.Tests.Multitenant
             Assert.Throws<InvalidCastException>(() => strategy.IdentifyTenant<int>());
         }
 
-        [Test(Description = "Attempts to retrieve the tenant ID when identification fails.")]
+        [Fact]
         public void IdentifyTenant_FailedRetrieval()
         {
             var strategy = new StubTenantIdentificationStrategy
             {
                 IdentificationSuccess = false
             };
-            Assert.AreEqual(Guid.Empty, strategy.IdentifyTenant<Guid>(), "The tenant ID should be the default for the type if identification fails.");
+            Assert.Equal(Guid.Empty, strategy.IdentifyTenant<Guid>());
         }
 
-        [Test(Description = "Attempts to get the tenant ID from a null strategy.")]
+        [Fact]
         public void IdentifyTenant_NullStrategy()
         {
             ITenantIdentificationStrategy strategy = null;
             Assert.Throws<ArgumentNullException>(() => strategy.IdentifyTenant<Guid>());
         }
 
-        [Test(Description = "Successfully retrieves and converts the tenant ID.")]
+        [Fact]
         public void IdentifyTenant_SuccessfulRetrieval()
         {
             var expected = Guid.NewGuid();
@@ -44,7 +43,7 @@ namespace Autofac.Extras.Tests.Multitenant
             {
                 TenantId = expected
             };
-            Assert.AreEqual(expected, strategy.IdentifyTenant<Guid>(), "The tenant ID wasn't properly retrieved and parsed.");
+            Assert.Equal(expected, strategy.IdentifyTenant<Guid>());
         }
     }
 }

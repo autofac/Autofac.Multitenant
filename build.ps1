@@ -97,7 +97,7 @@ Write-Host "Build number:" $env:DNX_BUILD_VERSION
 Get-ChildItem -Path .\src -Filter *.xproj -Recurse | ForEach-Object { Build-Project $_.DirectoryName }
 
 # Publish tests so we can test without recompiling
-Get-ChildItem -Path .\test -Filter *.xproj -Exclude Autofac.Test.Scenarios.ScannedAssembly.xproj -Recurse | ForEach-Object -Begin { $TestIndex = 0 } -Process { Publish-TestProject -DirectoryName $_.DirectoryName -Index $TestIndex; $TestIndex++; }
+Get-ChildItem -Path .\test -Filter *.xproj -Recurse | ForEach-Object -Begin { $TestIndex = 0 } -Process { Publish-TestProject -DirectoryName $_.DirectoryName -Index $TestIndex; $TestIndex++; }
 
 # Test under CLR
 Invoke-Tests
