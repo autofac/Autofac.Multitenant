@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Autofac.Extras.Multitenant.Properties {
+namespace Autofac.Multitenant.Properties {
     using System;
     using System.Reflection;
 

@@ -1,10 +1,10 @@
 ﻿using System;
 using Autofac;
-using Autofac.Extras.Multitenant;
-using Autofac.Extras.Tests.Multitenant.Stubs;
+using Autofac.Multitenant;
+using Autofac.Multitenant.Test.Stubs;
 using Xunit;
 
-namespace Autofac.Extras.Tests.Multitenant
+namespace Autofac.Multitenant.Test
 {
     public class TenantIdentificationStrategyExtensionsFixture
     {

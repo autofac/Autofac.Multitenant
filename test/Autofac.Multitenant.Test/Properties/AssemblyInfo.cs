@@ -1,3 +1,3 @@
 ﻿using System.Reflection;
 
-[assembly: AssemblyTitle("Autofac.Extras.Tests.Multitenant")]
+[assembly: AssemblyTitle("Autofac.Multitenant.Test")]

@@ -34,7 +34,7 @@ using Autofac.Core.Lifetime;
 using Autofac.Core.Resolving;
 using Autofac.Util;
 
-namespace Autofac.Extras.Multitenant
+namespace Autofac.Multitenant
 {
     /// <summary>
     /// <see cref="Autofac.IContainer"/> implementation that provides the ability
@@ -44,13 +44,13 @@ namespace Autofac.Extras.Multitenant
     /// <para>
     /// This container implementation modifies the definition of the standard
     /// container implementation by returning values that are tenant-specific.
-    /// For example, resolving a component via <see cref="Autofac.Extras.Multitenant.MultitenantContainer.ResolveComponent"/>
+    /// For example, resolving a component via <see cref="Autofac.Multitenant.MultitenantContainer.ResolveComponent"/>
     /// will yield a resolution of the dependency for the current tenant, not
     /// from a global container/lifetime.
     /// </para>
     /// <para>
     /// The "current tenant ID" is resolved from an implementation of
-    /// <see cref="Autofac.Extras.Multitenant.ITenantIdentificationStrategy"/>
+    /// <see cref="Autofac.Multitenant.ITenantIdentificationStrategy"/>
     /// that is passed into the container during construction.
     /// </para>
     /// <para>
@@ -67,12 +67,12 @@ namespace Autofac.Extras.Multitenant
     /// </para>
     /// <para>
     /// You may explicitly create and configure a tenant lifetime scope
-    /// using the <see cref="Autofac.Extras.Multitenant.MultitenantContainer.ConfigureTenant"/>
+    /// using the <see cref="Autofac.Multitenant.MultitenantContainer.ConfigureTenant"/>
     /// method. If you need to perform some logic and build up the configuration
-    /// for a tenant, you can do that using a <see cref="Autofac.Extras.Multitenant.ConfigurationActionBuilder"/>.
+    /// for a tenant, you can do that using a <see cref="Autofac.Multitenant.ConfigurationActionBuilder"/>.
     /// </para>
     /// </remarks>
-    /// <seealso cref="Autofac.Extras.Multitenant.ConfigurationActionBuilder"/>
+    /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
     [DebuggerDisplay("Tag = {Tag}, IsDisposed = {IsDisposed}")]
     public class MultitenantContainer : Disposable, IContainer
     {
@@ -196,13 +196,13 @@ namespace Autofac.Extras.Multitenant
         /// Gets the strategy used for identifying the current tenant.
         /// </summary>
         /// <value>
-        /// An <see cref="Autofac.Extras.Multitenant.ITenantIdentificationStrategy"/>
+        /// An <see cref="Autofac.Multitenant.ITenantIdentificationStrategy"/>
         /// used to identify the current tenant from the execution context.
         /// </value>
         public ITenantIdentificationStrategy TenantIdentificationStrategy { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Autofac.Extras.Multitenant.MultitenantContainer"/> class.
+        /// Initializes a new instance of the <see cref="Autofac.Multitenant.MultitenantContainer"/> class.
         /// </summary>
         /// <param name="tenantIdentificationStrategy">
         /// The strategy to use for identifying the current tenant.
@@ -309,7 +309,7 @@ namespace Autofac.Extras.Multitenant
         /// <remarks>
         /// <para>
         /// If you need to configure a tenant across multiple registration
-        /// calls, consider using a <see cref="Autofac.Extras.Multitenant.ConfigurationActionBuilder"/>
+        /// calls, consider using a <see cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
         /// and configuring the tenant using the aggregate configuration
         /// action it produces.
         /// </para>
@@ -321,7 +321,7 @@ namespace Autofac.Extras.Multitenant
         /// Thrown if the tenant indicated by <paramref name="tenantId" />
         /// has already been configured.
         /// </exception>
-        /// <seealso cref="Autofac.Extras.Multitenant.ConfigurationActionBuilder"/>
+        /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
         public void ConfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
         {
             if (configuration == null)
@@ -383,9 +383,9 @@ namespace Autofac.Extras.Multitenant
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This method uses the <see cref="Autofac.Extras.Multitenant.MultitenantContainer.TenantIdentificationStrategy"/>
+        /// This method uses the <see cref="Autofac.Multitenant.MultitenantContainer.TenantIdentificationStrategy"/>
         /// to retrieve the current tenant ID and then retrieves the scope
-        /// using <see cref="Autofac.Extras.Multitenant.MultitenantContainer.GetTenantScope"/>.
+        /// using <see cref="Autofac.Multitenant.MultitenantContainer.GetTenantScope"/>.
         /// </para>
         /// </remarks>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "The results of this method change based on execution context.")]

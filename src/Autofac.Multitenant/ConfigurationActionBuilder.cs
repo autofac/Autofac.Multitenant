@@ -6,7 +6,7 @@ using System.Linq;
 using System.Security;
 using Autofac;
 
-namespace Autofac.Extras.Multitenant
+namespace Autofac.Multitenant
 {
     /// <summary>
     /// Allows you to build up a set of configuration actions that can be used
@@ -23,7 +23,7 @@ namespace Autofac.Extras.Multitenant
     /// </para>
     /// <para>
     /// This builder allows you to collect a set of configuration actions and
-    /// use a final <see cref="Autofac.Extras.Multitenant.ConfigurationActionBuilder.Build"/>
+    /// use a final <see cref="Autofac.Multitenant.ConfigurationActionBuilder.Build"/>
     /// method to create a single aggregate action that can be used to finally
     /// create the lifetime scope.
     /// </para>

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Autofac.Extras.Tests.Multitenant.Stubs
+namespace Autofac.Multitenant.Test.Stubs
 {
     public class StubDisposableDependency : IDisposable
     {
