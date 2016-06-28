@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -90,13 +89,6 @@ namespace Autofac.Multitenant
         /// Dictionary containing the set of tenant-specific lifetime scopes. Key
         /// is <see cref="System.Object"/>, value is <see cref="Autofac.ILifetimeScope"/>.
         /// </summary>
-        /// <remarks>
-        /// Using <see cref="System.Collections.Hashtable"/> rather than
-        /// a generic dictionary because dictionaries aren't threadsafe even with
-        /// the lock/double-check. Doesn't have to be a synchronized hashtable
-        /// since we're managing the write operations internally with our own locks.
-        /// </remarks>
-        /// <seealso href="http://stackoverflow.com/questions/2624301/how-to-show-that-the-double-checked-lock-pattern-with-dictionarys-trygetvalue-is"/>
         // Issue #280: Incorrect double-checked-lock pattern usage in MultitenantContainer.GetTenantScope
         private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new Dictionary<object, ILifetimeScope>();
 
@@ -105,6 +97,66 @@ namespace Autofac.Multitenant
         /// of tenant scopes.
         /// </summary>
         private readonly object _tenantLifetimeScopeSyncRoot = new object();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Autofac.Multitenant.MultitenantContainer"/> class.
+        /// </summary>
+        /// <param name="tenantIdentificationStrategy">
+        /// The strategy to use for identifying the current tenant.
+        /// </param>
+        /// <param name="applicationContainer">
+        /// The application container from which tenant-specific lifetimes will
+        /// be created.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// Thrown if <paramref name="tenantIdentificationStrategy" /> or
+        /// <paramref name="applicationContainer"/> is <see langword="null" />.
+        /// </exception>
+        public MultitenantContainer(ITenantIdentificationStrategy tenantIdentificationStrategy, IContainer applicationContainer)
+        {
+            if (tenantIdentificationStrategy == null)
+            {
+                throw new ArgumentNullException(nameof(tenantIdentificationStrategy));
+            }
+
+            if (applicationContainer == null)
+            {
+                throw new ArgumentNullException(nameof(applicationContainer));
+            }
+
+            this.TenantIdentificationStrategy = tenantIdentificationStrategy;
+            this.ApplicationContainer = applicationContainer;
+        }
+
+        /// <summary>
+        /// Fired when a new scope based on the current scope is beginning.
+        /// </summary>
+        public event EventHandler<LifetimeScopeBeginningEventArgs> ChildLifetimeScopeBeginning
+        {
+            add { this.GetCurrentTenantScope().ChildLifetimeScopeBeginning += value; }
+
+            remove { this.GetCurrentTenantScope().ChildLifetimeScopeBeginning -= value; }
+        }
+
+        /// <summary>
+        /// Fired when this scope is ending.
+        /// </summary>
+        public event EventHandler<LifetimeScopeEndingEventArgs> CurrentScopeEnding
+        {
+            add { this.GetCurrentTenantScope().CurrentScopeEnding += value; }
+
+            remove { this.GetCurrentTenantScope().CurrentScopeEnding -= value; }
+        }
+
+        /// <summary>
+        /// Fired when a resolve operation is beginning in this scope.
+        /// </summary>
+        public event EventHandler<ResolveOperationBeginningEventArgs> ResolveOperationBeginning
+        {
+            add { this.GetCurrentTenantScope().ResolveOperationBeginning += value; }
+
+            remove { this.GetCurrentTenantScope().ResolveOperationBeginning -= value; }
+        }
 
         /// <summary>
         /// Gets the base application container.
@@ -163,36 +215,6 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Fired when a new scope based on the current scope is beginning.
-        /// </summary>
-        public event EventHandler<LifetimeScopeBeginningEventArgs> ChildLifetimeScopeBeginning
-        {
-            add { GetCurrentTenantScope().ChildLifetimeScopeBeginning += value; }
-
-            remove { GetCurrentTenantScope().ChildLifetimeScopeBeginning -= value; }
-        }
-
-        /// <summary>
-        /// Fired when this scope is ending.
-        /// </summary>
-        public event EventHandler<LifetimeScopeEndingEventArgs> CurrentScopeEnding
-        {
-            add { GetCurrentTenantScope().CurrentScopeEnding += value; }
-
-            remove { GetCurrentTenantScope().CurrentScopeEnding -= value; }
-        }
-
-        /// <summary>
-        /// Fired when a resolve operation is beginning in this scope.
-        /// </summary>
-        public event EventHandler<ResolveOperationBeginningEventArgs> ResolveOperationBeginning
-        {
-            add { GetCurrentTenantScope().ResolveOperationBeginning += value; }
-
-            remove { GetCurrentTenantScope().ResolveOperationBeginning -= value; }
-        }
-
-        /// <summary>
         /// Gets the strategy used for identifying the current tenant.
         /// </summary>
         /// <value>
@@ -200,34 +222,6 @@ namespace Autofac.Multitenant
         /// used to identify the current tenant from the execution context.
         /// </value>
         public ITenantIdentificationStrategy TenantIdentificationStrategy { get; private set; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Autofac.Multitenant.MultitenantContainer"/> class.
-        /// </summary>
-        /// <param name="tenantIdentificationStrategy">
-        /// The strategy to use for identifying the current tenant.
-        /// </param>
-        /// <param name="applicationContainer">
-        /// The application container from which tenant-specific lifetimes will
-        /// be created.
-        /// </param>
-        /// <exception cref="System.ArgumentNullException">
-        /// Thrown if <paramref name="tenantIdentificationStrategy" /> or
-        /// <paramref name="applicationContainer"/> is <see langword="null" />.
-        /// </exception>
-        public MultitenantContainer(ITenantIdentificationStrategy tenantIdentificationStrategy, IContainer applicationContainer)
-        {
-            if (tenantIdentificationStrategy == null)
-            {
-                throw new ArgumentNullException("tenantIdentificationStrategy");
-            }
-            if (applicationContainer == null)
-            {
-                throw new ArgumentNullException("applicationContainer");
-            }
-            this.TenantIdentificationStrategy = tenantIdentificationStrategy;
-            this.ApplicationContainer = applicationContainer;
-        }
 
         /// <summary>
         /// Begin a new nested scope for the current tenant. Component instances created via the new scope
@@ -326,7 +320,7 @@ namespace Autofac.Multitenant
         {
             if (configuration == null)
             {
-                throw new ArgumentNullException("configuration");
+                throw new ArgumentNullException(nameof(configuration));
             }
 
             if (tenantId == null)
@@ -344,37 +338,11 @@ namespace Autofac.Multitenant
                 // thread create the lifetime scope behind our backs.
                 if (this._tenantLifetimeScopes.ContainsKey(tenantId))
                 {
-                    throw new InvalidOperationException(String.Format(CultureInfo.CurrentUICulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
+                    throw new InvalidOperationException(string.Format(CultureInfo.CurrentUICulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
                 }
 
                 this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
             }
-        }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources
-        /// </summary>
-        /// <param name="disposing">
-        /// <see langword="true" /> to release both managed and unmanaged resources;
-        /// <see langword="false" /> to release only unmanaged resources.
-        /// </param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                // Lock the lifetime scope table so no threads can add new lifetime
-                // scopes while we're disposing.
-                lock (this._tenantLifetimeScopeSyncRoot)
-                {
-                    foreach (ILifetimeScope scope in this._tenantLifetimeScopes.Values)
-                    {
-                        scope.Dispose();
-                    }
-                }
-
-                this.ApplicationContainer.Dispose();
-            }
-            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -391,7 +359,7 @@ namespace Autofac.Multitenant
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "The results of this method change based on execution context.")]
         public ILifetimeScope GetCurrentTenantScope()
         {
-            object tenantId = null;
+            var tenantId = (object)null;
             if (this.TenantIdentificationStrategy.TryIdentifyTenant(out tenantId))
             {
                 return this.GetTenantScope(tenantId);
@@ -415,7 +383,7 @@ namespace Autofac.Multitenant
                 tenantId = this._defaultTenantId;
             }
 
-            ILifetimeScope tenantScope = null;
+            var tenantScope = (ILifetimeScope)null;
             if (!this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
             {
                 lock (this._tenantLifetimeScopeSyncRoot)
@@ -430,6 +398,7 @@ namespace Autofac.Multitenant
                     }
                 }
             }
+
             return tenantScope;
         }
 
@@ -451,6 +420,33 @@ namespace Autofac.Multitenant
         public object ResolveComponent(IComponentRegistration registration, IEnumerable<Parameter> parameters)
         {
             return this.GetCurrentTenantScope().ResolveComponent(registration, parameters);
+        }
+
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources
+        /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true" /> to release both managed and unmanaged resources;
+        /// <see langword="false" /> to release only unmanaged resources.
+        /// </param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // Lock the lifetime scope table so no threads can add new lifetime
+                // scopes while we're disposing.
+                lock (this._tenantLifetimeScopeSyncRoot)
+                {
+                    foreach (var scope in this._tenantLifetimeScopes.Values)
+                    {
+                        scope.Dispose();
+                    }
+                }
+
+                this.ApplicationContainer.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Autofac.Multitenant
@@ -29,13 +28,15 @@ namespace Autofac.Multitenant
         {
             if (strategy == null)
             {
-                throw new ArgumentNullException("strategy");
+                throw new ArgumentNullException(nameof(strategy));
             }
+
             object id;
             if (strategy.TryIdentifyTenant(out id))
             {
                 return (T)id;
             }
+
             return default(T);
         }
     }

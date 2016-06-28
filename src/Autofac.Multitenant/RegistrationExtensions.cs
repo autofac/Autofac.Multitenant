@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Security;
 using Autofac.Builder;
 
 namespace Autofac.Multitenant
@@ -31,8 +30,9 @@ namespace Autofac.Multitenant
         {
             if (registration == null)
             {
-                throw new ArgumentNullException("registration");
+                throw new ArgumentNullException(nameof(registration));
             }
+
             return registration.InstancePerMatchingLifetimeScope(MultitenantContainer.TenantLifetimeScopeTag);
         }
     }

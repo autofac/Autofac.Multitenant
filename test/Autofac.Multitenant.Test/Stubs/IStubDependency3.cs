@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Autofac.Multitenant.Test.Stubs
 {
@@ -10,6 +8,6 @@ namespace Autofac.Multitenant.Test.Stubs
     /// </summary>
     public interface IStubDependency3
     {
-        IStubDependency1 Dependency { get;}
+        IStubDependency1 Dependency { get; }
     }
 }
