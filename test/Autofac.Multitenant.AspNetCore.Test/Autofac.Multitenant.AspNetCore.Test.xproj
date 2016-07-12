@@ -6,8 +6,8 @@
   </PropertyGroup>
   <Import Project="$(VSToolsPath)\DotNet\Microsoft.DotNet.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>b2481fc3-675b-45f4-b785-ce1e1f0aa8b3</ProjectGuid>
-    <RootNamespace>Autofac.Multitenant.Test</RootNamespace>
+    <ProjectGuid>41d7953e-f018-455a-a669-4e02803800d0</ProjectGuid>
+    <RootNamespace>Autofac.Multitenant.AspNetCore.Test</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">.\obj</BaseIntermediateOutputPath>
     <OutputPath Condition="'$(OutputPath)'=='' ">.\bin\</OutputPath>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>

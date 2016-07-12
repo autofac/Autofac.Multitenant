@@ -314,8 +314,11 @@ namespace Autofac.Multitenant.Test
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
+            mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().As<IStubDependency1>());
 
             Assert.IsType<StubDependency1Impl2>(mtc.Resolve<IStubDependency1>());
+            strategy.TenantId = "tenant2";
+            Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
         }
 
         [Fact]
