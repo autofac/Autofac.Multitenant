@@ -24,7 +24,7 @@ namespace Autofac.Multitenant.AspNetCore.Test
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
 
-            var serviceProvider = mtc.Resolve<IServiceProvider>();
+            var serviceProvider = new AutofacServiceProvider(mtc);
 
             // Two resolutions for a single tenant
             var dep1 = serviceProvider.GetService<IStubDependency1>();
@@ -55,7 +55,7 @@ namespace Autofac.Multitenant.AspNetCore.Test
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
             mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().As<IStubDependency1>());
 
-            var serviceProvider = mtc.Resolve<IServiceProvider>();
+            var serviceProvider = new AutofacServiceProvider(mtc);
 
             Assert.IsType<StubDependency1Impl2>(serviceProvider.GetService<IStubDependency1>());
             strategy.TenantId = "tenant2";
@@ -77,7 +77,7 @@ namespace Autofac.Multitenant.AspNetCore.Test
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
 
-            var serviceProvider = mtc.Resolve<IServiceProvider>();
+            var serviceProvider = new AutofacServiceProvider(mtc);
 
             Assert.IsType<StubDependency1Impl1>(serviceProvider.GetService<IStubDependency1>());
         }
