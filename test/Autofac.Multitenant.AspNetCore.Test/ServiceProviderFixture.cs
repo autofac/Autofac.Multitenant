@@ -20,7 +20,7 @@ namespace Autofac.Multitenant.AspNetCore.Test
 
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
 
@@ -49,7 +49,7 @@ namespace Autofac.Multitenant.AspNetCore.Test
 
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
@@ -73,7 +73,7 @@ namespace Autofac.Multitenant.AspNetCore.Test
 
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
 

@@ -338,7 +338,7 @@ namespace Autofac.Multitenant
                 // thread create the lifetime scope behind our backs.
                 if (this._tenantLifetimeScopes.ContainsKey(tenantId))
                 {
-                    throw new InvalidOperationException(string.Format(CultureInfo.CurrentUICulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
+                    throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
                 }
 
                 this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);

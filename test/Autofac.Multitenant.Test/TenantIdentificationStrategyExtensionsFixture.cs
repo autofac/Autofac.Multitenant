@@ -13,7 +13,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy
             {
-                TenantId = Guid.NewGuid()
+                TenantId = Guid.NewGuid(),
             };
             Assert.Throws<InvalidCastException>(() => strategy.IdentifyTenant<int>());
         }
@@ -23,7 +23,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy
             {
-                IdentificationSuccess = false
+                IdentificationSuccess = false,
             };
             Assert.Equal(Guid.Empty, strategy.IdentifyTenant<Guid>());
         }
@@ -41,7 +41,7 @@ namespace Autofac.Multitenant.Test
             var expected = Guid.NewGuid();
             var strategy = new StubTenantIdentificationStrategy
             {
-                TenantId = expected
+                TenantId = expected,
             };
             Assert.Equal(expected, strategy.IdentifyTenant<Guid>());
         }

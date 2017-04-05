@@ -21,7 +21,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var builder = new ContainerBuilder();
             builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>().InstancePerTenant();
@@ -44,7 +44,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var builder = new ContainerBuilder();
             builder.RegisterType<StubDependency3Impl>().As<IStubDependency3>().InstancePerTenant();

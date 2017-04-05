@@ -13,7 +13,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
@@ -29,7 +29,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
@@ -46,7 +46,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             using (var nestedScope = mtc.BeginLifetimeScope("tag"))
@@ -60,7 +60,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>().InstancePerLifetimeScope());
@@ -78,7 +78,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var scope = mtc.GetCurrentTenantScope();
@@ -92,7 +92,7 @@ namespace Autofac.Multitenant.Test
             builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant(null, b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
@@ -106,7 +106,7 @@ namespace Autofac.Multitenant.Test
             builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
@@ -119,7 +119,7 @@ namespace Autofac.Multitenant.Test
             var builder = new ContainerBuilder();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             Assert.Throws<ArgumentNullException>(() => mtc.ConfigureTenant("tenant1", null));
@@ -156,7 +156,7 @@ namespace Autofac.Multitenant.Test
             builder.RegisterInstance(appDependency).OwnedByLifetimeScope();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterInstance(tenantDependency).OwnedByLifetimeScope());
@@ -175,7 +175,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var scope = mtc.GetCurrentTenantScope();
@@ -187,7 +187,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var tenant1a = mtc.GetCurrentTenantScope();
@@ -204,7 +204,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var current = mtc.GetCurrentTenantScope();
@@ -218,7 +218,7 @@ namespace Autofac.Multitenant.Test
             var strategy = new StubTenantIdentificationStrategy()
             {
                 TenantId = "tenant1",
-                IdentificationSuccess = false
+                IdentificationSuccess = false,
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var current = mtc.GetCurrentTenantScope();
@@ -231,7 +231,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var scope = mtc.GetTenantScope(null);
@@ -244,7 +244,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
@@ -258,7 +258,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var scope = mtc.GetTenantScope("tenant1");
@@ -271,7 +271,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
@@ -287,7 +287,7 @@ namespace Autofac.Multitenant.Test
             builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>().SingleInstance();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
 
@@ -310,7 +310,7 @@ namespace Autofac.Multitenant.Test
             builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
@@ -328,7 +328,7 @@ namespace Autofac.Multitenant.Test
             builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>();
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             Assert.IsType<StubDependency1Impl1>(mtc.Resolve<IStubDependency1>());
@@ -342,7 +342,7 @@ namespace Autofac.Multitenant.Test
 
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>().SingleInstance());
@@ -372,7 +372,7 @@ namespace Autofac.Multitenant.Test
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
-                TenantId = "tenant1"
+                TenantId = "tenant1",
             };
             var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
             var scope = mtc.GetCurrentTenantScope();

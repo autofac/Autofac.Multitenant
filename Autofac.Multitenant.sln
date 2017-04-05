@@ -1,22 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D74112AD-C85D-478D-9821-63FB241AF053}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{E248F049-CE16-456B-8141-741595D3DBA9}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90F01135-1435-463B-B59B-680940B9D212}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Multitenant", "src\Autofac.Multitenant\Autofac.Multitenant.csproj", "{7D4B873A-C3A8-40C6-BEAE-8BCB9F3A45D3}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Autofac.Multitenant", "src\Autofac.Multitenant\Autofac.Multitenant.xproj", "{7D4B873A-C3A8-40C6-BEAE-8BCB9F3A45D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Multitenant.Test", "test\Autofac.Multitenant.Test\Autofac.Multitenant.Test.csproj", "{B2481FC3-675B-45F4-B785-CE1E1F0AA8B3}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Autofac.Multitenant.Test", "test\Autofac.Multitenant.Test\Autofac.Multitenant.Test.xproj", "{B2481FC3-675B-45F4-B785-CE1E1F0AA8B3}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Autofac.Multitenant.AspNetCore.Test", "test\Autofac.Multitenant.AspNetCore.Test\Autofac.Multitenant.AspNetCore.Test.xproj", "{41D7953E-F018-455A-A669-4E02803800D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Multitenant.AspNetCore.Test", "test\Autofac.Multitenant.AspNetCore.Test\Autofac.Multitenant.AspNetCore.Test.csproj", "{41D7953E-F018-455A-A669-4E02803800D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
