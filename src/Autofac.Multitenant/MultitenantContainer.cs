@@ -93,10 +93,10 @@ namespace Autofac.Multitenant
         private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new Dictionary<object, ILifetimeScope>();
 
         /// <summary>
-        /// Synchronization primitive for locking modifications and initializations
+        /// Reader-writer lock for locking modifications and initializations
         /// of tenant scopes.
         /// </summary>
-        private readonly object _tenantLifetimeScopeSyncRoot = new object();
+        private readonly System.Threading.ReaderWriterLockSlim _readWriteLock = new System.Threading.ReaderWriterLockSlim();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Autofac.Multitenant.MultitenantContainer"/> class.
@@ -328,20 +328,27 @@ namespace Autofac.Multitenant
                 tenantId = this._defaultTenantId;
             }
 
-            // Skipping a read/lock/double-check here since ConfigureTenant
-            // doesn't get called often and is OK to block. Jump straight to
-            // the lock before read.
-            lock (this._tenantLifetimeScopeSyncRoot)
+            _readWriteLock.EnterUpgradeableReadLock();
+            try
             {
-                // The check and [potential] scope creation are locked here to
-                // ensure atomicity. We don't want to check and then have another
-                // thread create the lifetime scope behind our backs.
                 if (this._tenantLifetimeScopes.ContainsKey(tenantId))
                 {
                     throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
                 }
 
-                this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+                _readWriteLock.EnterWriteLock();
+                try
+                {
+                    this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+                }
+                finally
+                {
+                    _readWriteLock.ExitWriteLock();
+                }
+            }
+            finally
+            {
+                _readWriteLock.ExitUpgradeableReadLock();
             }
         }
 
@@ -384,9 +391,22 @@ namespace Autofac.Multitenant
             }
 
             var tenantScope = (ILifetimeScope)null;
-            if (!this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
+            _readWriteLock.EnterReadLock();
+            try
             {
-                lock (this._tenantLifetimeScopeSyncRoot)
+                this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope);
+            }
+            finally
+            {
+                _readWriteLock.ExitReadLock();
+            }
+
+            if (tenantScope == null)
+            {
+                // just go straight to write-lock, chances of not needing it at this point would be low
+                _readWriteLock.EnterWriteLock();
+
+                try
                 {
                     // The check and [potential] scope creation are locked here to
                     // ensure atomicity. We don't want to check and then have another
@@ -397,9 +417,68 @@ namespace Autofac.Multitenant
                         this._tenantLifetimeScopes[tenantId] = tenantScope;
                     }
                 }
+                finally
+                {
+                    _readWriteLock.ExitWriteLock();
+                }
             }
 
             return tenantScope;
+        }
+
+        /// <summary>
+        /// Returns whether the given tenantId has been configured.
+        /// </summary>
+        /// <param name="tenantId">The tenantId to test.</param>
+        /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
+        public bool TenantIsConfigured(object tenantId)
+        {
+            _readWriteLock.EnterReadLock();
+            try
+            {
+                if (tenantId == null)
+                {
+                    tenantId = this._defaultTenantId;
+                }
+
+                return _tenantLifetimeScopes.ContainsKey(tenantId);
+            }
+            finally
+            {
+                _readWriteLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Removes the tenant configuration and disposes the associated lifetime scope.
+        /// </summary>
+        /// <param name="tenantId">The id of the tenant to dispose.</param>
+        /// <remarks>Like </remarks>
+        public bool RemoveTenant(object tenantId)
+        {
+            // this should be a fairly rare operation, so we'll jump right to the write-lock
+            _readWriteLock.EnterWriteLock();
+            try
+            {
+                if (tenantId == null)
+                {
+                    tenantId = this._defaultTenantId;
+                }
+
+                var tenantScope = (ILifetimeScope)null;
+                if (this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) && tenantScope != null)
+                {
+                    tenantScope.Dispose();
+
+                    return _tenantLifetimeScopes.Remove(tenantId);
+                }
+
+                return false;
+            }
+            finally
+            {
+                _readWriteLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -435,15 +514,23 @@ namespace Autofac.Multitenant
             {
                 // Lock the lifetime scope table so no threads can add new lifetime
                 // scopes while we're disposing.
-                lock (this._tenantLifetimeScopeSyncRoot)
+                _readWriteLock.EnterWriteLock();
+
+                try
                 {
                     foreach (var scope in this._tenantLifetimeScopes.Values)
                     {
                         scope.Dispose();
                     }
+
+                    this.ApplicationContainer.Dispose();
+                }
+                finally
+                {
+                    _readWriteLock.ExitWriteLock();
                 }
 
-                this.ApplicationContainer.Dispose();
+                _readWriteLock.Dispose();
             }
 
             base.Dispose(disposing);
