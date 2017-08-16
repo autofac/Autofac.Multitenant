@@ -53,14 +53,14 @@ namespace Autofac.Multitenant
     /// that is passed into the container during construction.
     /// </para>
     /// <para>
-    /// The ability to remove (<see cref="RemoveTenant(object)">) or reconfigure
+    /// The ability to remove (<see cref="RemoveTenant(object)"/>) or reconfigure
     /// (<see cref="ReconfigureTenant(object, Action{ContainerBuilder})"/> an
     /// active tenant has been added.  However, it must still be noted that
     /// tenant lifetime scopes are immutable: once they are retrieved,
     /// configured, or an item is resolved, that tenant lifetime scope
     /// cannot be updated or otherwise changed. This is important since
     /// it means you need to configure your defaults and tenant overrides
-    /// early, in application startup.  
+    /// early, in application startup.
     /// </para>
     /// <para>
     /// Even when using ReconfigureTenant, the
