@@ -53,11 +53,22 @@ namespace Autofac.Multitenant
     /// that is passed into the container during construction.
     /// </para>
     /// <para>
-    /// Tenant lifetime scopes are immutable, so once they are retrieved,
+    /// The ability to remove (<see cref="RemoveTenant(object)">) or reconfigure
+    /// (<see cref="ReconfigureTenant(object, Action{ContainerBuilder})"/> an
+    /// active tenant has been added.  However, it must still be noted that
+    /// tenant lifetime scopes are immutable: once they are retrieved,
     /// configured, or an item is resolved, that tenant lifetime scope
     /// cannot be updated or otherwise changed. This is important since
     /// it means you need to configure your defaults and tenant overrides
-    /// early, in application startup.
+    /// early, in application startup.  
+    /// </para>
+    /// <para>
+    /// Even when using ReconfigureTenant, the
+    /// existing tenant scope isn't modified, but is disposed and rebuilt.
+    /// Any dependencies that were resolved from a Removed scope will also
+    /// be disposed.  You will need to account for this in your application.
+    /// Depending on your architecture, it may require users to re-login or some
+    /// other form of soft reset.
     /// </para>
     /// <para>
     /// If you do not configure a tenant lifetime scope for a tenant but resolve a
@@ -289,7 +300,7 @@ namespace Autofac.Multitenant
 
         /// <summary>
         /// Allows configuration of tenant-specific components. You may only call this
-        /// method one time per tenant.
+        /// method if the tenant is not currently configured.
         /// </summary>
         /// <param name="tenantId">
         /// The ID of the tenant for which configuration is occurring. If this
@@ -307,6 +318,16 @@ namespace Autofac.Multitenant
         /// and configuring the tenant using the aggregate configuration
         /// action it produces.
         /// </para>
+        /// <para>
+        /// Note that if <see cref="GetTenantScope(object)"/> is called using the tenant ID,
+        /// it builds the tenant scope with the default (container) configuration, which will also
+        /// preclude the tenant from being configured.  This includes the case where a dependency
+        /// is resolved from the <see cref="MultitenantContainer"/> when the tenant ID is
+        /// returned by the registered <see cref="TenantIdentificationStrategy"/>. If configuration
+        /// can occur after application startup, use <see cref="ReconfigureTenant(object, Action{ContainerBuilder})"/>
+        /// or "lock out" un-configured tenants using <see cref="TenantIsConfigured(object)"/> or
+        /// other mechanism.
+        /// </para>
         /// </remarks>
         /// <exception cref="System.ArgumentNullException">
         /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
@@ -316,6 +337,7 @@ namespace Autofac.Multitenant
         /// has already been configured.
         /// </exception>
         /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// <seealso cref="ReconfigureTenant(object, Action{ContainerBuilder})"/>
         public void ConfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
         {
             if (configuration == null)
@@ -349,6 +371,71 @@ namespace Autofac.Multitenant
             finally
             {
                 _readWriteLock.ExitUpgradeableReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Allows re-configuration of tenant-specific components by closing and rebuilding
+        /// the tenant scope.
+        /// </summary>
+        /// <param name="tenantId">
+        /// The ID of the tenant for which configuration is occurring. If this
+        /// value is <see langword="null" />, configuration occurs for the "default
+        /// tenant" - the tenant that is used when no tenant ID can be determined.
+        /// </param>
+        /// <param name="configuration">
+        /// An action that uses a <see cref="Autofac.ContainerBuilder"/> to set
+        /// up registrations for the tenant.
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// If you need to configure a tenant across multiple registration
+        /// calls, consider using a <see cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// and configuring the tenant using the aggregate configuration
+        /// action it produces.
+        /// </para>
+        /// <para>
+        /// This method is intended for use after application start-up.  During start-up, please
+        /// use <see cref="ConfigureTenant(object, Action{ContainerBuilder})"/>.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="System.ArgumentNullException">
+        /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
+        /// </exception>
+        /// <returns><c>true</c> if an existing configuration was removed; otherwise, <c>false</c>.</returns>
+        /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
+        public bool ReconfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
+        {
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            if (tenantId == null)
+            {
+                tenantId = this._defaultTenantId;
+            }
+
+            // we're going to change the dictionary either way, dispense with the read-check
+            _readWriteLock.EnterWriteLock();
+            try
+            {
+                var removed = false;
+                if (this._tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
+                {
+                    tenantScope.Dispose();
+
+                    removed = _tenantLifetimeScopes.Remove(tenantId);
+                }
+
+                this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+
+                return removed;
+            }
+            finally
+            {
+                _readWriteLock.ExitWriteLock();
             }
         }
 
@@ -454,19 +541,19 @@ namespace Autofac.Multitenant
         /// </summary>
         /// <param name="tenantId">The id of the tenant to dispose.</param>
         /// <remarks>Like </remarks>
+        /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
         public bool RemoveTenant(object tenantId)
         {
+            if (tenantId == null)
+            {
+                tenantId = this._defaultTenantId;
+            }
+
             // this should be a fairly rare operation, so we'll jump right to the write-lock
             _readWriteLock.EnterWriteLock();
             try
             {
-                if (tenantId == null)
-                {
-                    tenantId = this._defaultTenantId;
-                }
-
-                var tenantScope = (ILifetimeScope)null;
-                if (this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) && tenantScope != null)
+                if (this._tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
                 {
                     tenantScope.Dispose();
 
