@@ -55,7 +55,7 @@ namespace Autofac.Multitenant
     /// <para>
     /// The ability to remove (<see cref="RemoveTenant(object)"/>) or reconfigure
     /// (<see cref="ReconfigureTenant(object, Action{ContainerBuilder})"/> an
-    /// active tenant has been added.  However, it must still be noted that
+    /// active tenant exists.  However, it must still be noted that
     /// tenant lifetime scopes are immutable: once they are retrieved,
     /// configured, or an item is resolved, that tenant lifetime scope
     /// cannot be updated or otherwise changed. This is important since
@@ -63,9 +63,9 @@ namespace Autofac.Multitenant
     /// early, in application startup.
     /// </para>
     /// <para>
-    /// Even when using ReconfigureTenant, the
+    /// Even when using <see cref="ReconfigureTenant(object, Action{ContainerBuilder})"/>, the
     /// existing tenant scope isn't modified, but is disposed and rebuilt.
-    /// Any dependencies that were resolved from a Removed scope will also
+    /// Any dependencies that were resolved from a removed scope will also
     /// be disposed.  You will need to account for this in your application.
     /// Depending on your architecture, it may require users to re-login or some
     /// other form of soft reset.
@@ -514,9 +514,9 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Returns whether the given tenantId has been configured.
+        /// Returns whether the given tenant ID has been configured.
         /// </summary>
-        /// <param name="tenantId">The tenantId to test.</param>
+        /// <param name="tenantId">The tenant ID to test.</param>
         /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
         public bool TenantIsConfigured(object tenantId)
         {
@@ -539,8 +539,7 @@ namespace Autofac.Multitenant
         /// <summary>
         /// Removes the tenant configuration and disposes the associated lifetime scope.
         /// </summary>
-        /// <param name="tenantId">The id of the tenant to dispose.</param>
-        /// <remarks>Like </remarks>
+        /// <param name="tenantId">The ID of the tenant to dispose.</param>
         /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
         public bool RemoveTenant(object tenantId)
         {
