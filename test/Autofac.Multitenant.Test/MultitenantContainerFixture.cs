@@ -378,5 +378,164 @@ namespace Autofac.Multitenant.Test
             var scope = mtc.GetCurrentTenantScope();
             Assert.Same(scope.Tag, mtc.Tag);
         }
+
+        [Fact]
+        public void TenantIsConfigured_NotConfigured()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+
+            Assert.False(mtc.TenantIsConfigured("tenant1"));
+        }
+
+        [Fact]
+        public void TenantIsConfigured_Configured()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.ConfigureTenant("tenant1", b => { });
+
+            Assert.True(mtc.TenantIsConfigured("tenant1"));
+        }
+
+        [Fact]
+        public void TenantIsConfigured_DefaultConfigures()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.GetTenantScope("tenant1");
+
+            Assert.True(mtc.TenantIsConfigured("tenant1"));
+        }
+
+        [Fact]
+        public void RemoveTenant_ShowFallback()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var builder = new ContainerBuilder();
+            builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+            var mtc = new MultitenantContainer(strategy, builder.Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+            mtc.RemoveTenant("tenant1");
+
+            Assert.IsType<StubDependency1Impl1>(mtc.Resolve<IStubDependency1>());
+        }
+
+        [Fact]
+        public void RemoveTenant_ShowDisposal()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces());
+
+            var tenant1scope = mtc.GetTenantScope("tenant1");
+
+            mtc.RemoveTenant("tenant1");
+
+            Assert.Throws<ObjectDisposedException>(() => tenant1scope.Resolve<IStubDependency1>());
+        }
+
+        [Fact]
+        public void RemoveTenant_ConfigureAfterRemove()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var builder = new ContainerBuilder();
+            builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+            var mtc = new MultitenantContainer(strategy, builder.Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+            mtc.RemoveTenant("tenant1");
+
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+            Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+        }
+
+        [Fact]
+        public void RemoveTenant_ConfigureAfterRemoveFailCaseDemo()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var builder = new ContainerBuilder();
+            builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+            var mtc = new MultitenantContainer(strategy, builder.Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+            mtc.RemoveTenant("tenant1");
+
+            // contextual tenant is still "tenant1"; this will force creation of container-configured tenant
+            mtc.Resolve<IStubDependency1>();
+
+            Assert.Throws<InvalidOperationException>(() => mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces()));
+        }
+
+        [Fact]
+        public void RemoveTenant_TenantSingleton()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+            var stub = mtc.Resolve<StubDisposableDependency>();
+
+            mtc.RemoveTenant("tenant1");
+
+            Assert.True(stub.IsDisposed);
+        }
+
+        [Fact]
+        public void ReconfigureTenant_Reconfigure()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+            mtc.Resolve<IStubDependency1>();
+
+            mtc.ReconfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+            Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+        }
+
+        [Fact]
+        public void ReconfigureTenant_ReconfigureSingleton()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
+            mtc.Resolve<IStubDependency1>();
+
+            mtc.ReconfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces().SingleInstance());
+
+            Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+        }
     }
 }
