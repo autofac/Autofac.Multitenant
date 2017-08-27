@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autofac;
 using Autofac.Multitenant;
 using Autofac.Multitenant.Test.Stubs;
@@ -616,7 +617,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
             var registeredTenants = mtc.GetTenantsIds();
-            var tenantScopes = new System.Collections.Generic.List<ILifetimeScope>();
+            var tenantScopes = new List<ILifetimeScope>();
             foreach (var tenantId in registeredTenants)
             {
                 tenantScopes.Add(mtc.GetTenantScope(tenantId));
@@ -626,8 +627,6 @@ namespace Autofac.Multitenant.Test
 
             foreach (var tenantScope in tenantScopes)
             {
-                Assert.Throws<ObjectDisposedException>(() => tenantScope.Resolve<IStubDependency1>());
-                Assert.Throws<ObjectDisposedException>(() => tenantScope.Resolve<IStubDependency1>());
                 Assert.Throws<ObjectDisposedException>(() => tenantScope.Resolve<IStubDependency1>());
             }
         }
@@ -703,7 +702,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
 
             var registeredTenants = mtc.GetTenantsIds();
-            var tenantsStubs = new System.Collections.Generic.List<StubDisposableDependency>();
+            var tenantsStubs = new List<StubDisposableDependency>();
             foreach (var tenantId in registeredTenants)
             {
                 strategy.TenantId = tenantId;
