@@ -514,9 +514,9 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Returns collection of all registered tenant IDs.
+        /// Returns collection of all registered tenants IDs.
         /// </summary>
-        public ICollection<object> GetTenantsIds()
+        public IEnumerable<object> GetTenants()
         {
             _readWriteLock.EnterReadLock();
             try

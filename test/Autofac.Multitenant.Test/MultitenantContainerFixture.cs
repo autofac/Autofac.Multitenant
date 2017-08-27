@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autofac;
 using Autofac.Multitenant;
 using Autofac.Multitenant.Test.Stubs;
@@ -540,7 +541,7 @@ namespace Autofac.Multitenant.Test
         }
 
         [Fact]
-        public void GetTenantsIds_CheckRegistered()
+        public void GetTenants_CheckRegistered()
         {
             var strategy = new StubTenantIdentificationStrategy()
             {
@@ -551,7 +552,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
-            var registeredTenants = mtc.GetTenantsIds();
+            var registeredTenants = mtc.GetTenants().ToList();
             Assert.Equal(registeredTenants.Count, 3);
 
             foreach (var tenantId in registeredTenants)
@@ -577,7 +578,7 @@ namespace Autofac.Multitenant.Test
 
             mtc.ClearTenants();
 
-            Assert.Equal(mtc.GetTenantsIds().Count, 0);
+            Assert.Equal(mtc.GetTenants().Count(), 0);
         }
 
         [Fact]
@@ -594,7 +595,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
-            var registeredTenants = mtc.GetTenantsIds();
+            var registeredTenants = mtc.GetTenants();
             mtc.ClearTenants();
 
             foreach (var tenantId in registeredTenants)
@@ -616,7 +617,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
-            var registeredTenants = mtc.GetTenantsIds();
+            var registeredTenants = mtc.GetTenants();
             var tenantScopes = new List<ILifetimeScope>();
             foreach (var tenantId in registeredTenants)
             {
@@ -701,7 +702,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
 
-            var registeredTenants = mtc.GetTenantsIds();
+            var registeredTenants = mtc.GetTenants();
             var tenantsStubs = new List<StubDisposableDependency>();
             foreach (var tenantId in registeredTenants)
             {
