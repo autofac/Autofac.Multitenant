@@ -514,6 +514,22 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
+        /// Returns collection of all registered tenants IDs.
+        /// </summary>
+        public IEnumerable<object> GetTenants()
+        {
+            _readWriteLock.EnterReadLock();
+            try
+            {
+                return new List<object>(_tenantLifetimeScopes.Keys);
+            }
+            finally
+            {
+                _readWriteLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
         /// Returns whether the given tenant ID has been configured.
         /// </summary>
         /// <param name="tenantId">The tenant ID to test.</param>
@@ -560,6 +576,27 @@ namespace Autofac.Multitenant
                 }
 
                 return false;
+            }
+            finally
+            {
+                _readWriteLock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// Clears all tenants configurations and disposes the associated lifetime scopes.
+        /// </summary>
+        public void ClearTenants()
+        {
+            _readWriteLock.EnterWriteLock();
+            try
+            {
+                foreach (var tenantScope in _tenantLifetimeScopes.Values)
+                {
+                    tenantScope.Dispose();
+                }
+
+                _tenantLifetimeScopes.Clear();
             }
             finally
             {
