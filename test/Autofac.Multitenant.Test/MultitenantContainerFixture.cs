@@ -553,7 +553,7 @@ namespace Autofac.Multitenant.Test
             mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
             var registeredTenants = mtc.GetTenants().ToList();
-            Assert.Equal(registeredTenants.Count, 3);
+            Assert.Equal(3, registeredTenants.Count);
 
             foreach (var tenantId in registeredTenants)
             {
@@ -578,7 +578,7 @@ namespace Autofac.Multitenant.Test
 
             mtc.ClearTenants();
 
-            Assert.Equal(mtc.GetTenants().Count(), 0);
+            Assert.Empty(mtc.GetTenants());
         }
 
         [Fact]

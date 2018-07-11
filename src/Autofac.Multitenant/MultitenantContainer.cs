@@ -192,7 +192,7 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Gets the disposer associated with the current tenant's <see cref="T:Autofac.ILifetimeScope"/>.
+        /// Gets the disposer associated with the current tenant's <see cref="Autofac.ILifetimeScope"/>.
         /// Component instances can be associated with it manually if required.
         /// </summary>
         /// <value>
@@ -209,7 +209,7 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Gets the tag applied to the current tenant's <see cref="T:Autofac.ILifetimeScope"/>.
+        /// Gets the tag applied to the current tenant's <see cref="Autofac.ILifetimeScope"/>.
         /// </summary>
         /// <value>
         /// An <see cref="System.Object"/> that identifies the current tenant's
@@ -219,7 +219,7 @@ namespace Autofac.Multitenant
         /// Tags allow a level in the lifetime hierarchy to be identified.
         /// In most applications, tags are not necessary.
         /// </remarks>
-        /// <seealso cref="M:Autofac.Builder.IRegistrationBuilder{T, U, V}.InstancePerMatchingLifetimeScope(System.Object)"/>
+        /// <seealso cref="Autofac.Builder.IRegistrationBuilder{T, U, V}.InstancePerMatchingLifetimeScope(object[])"/>
         public object Tag
         {
             get { return this.GetCurrentTenantScope().Tag; }
@@ -248,7 +248,7 @@ namespace Autofac.Multitenant
         /// Begin a new nested scope for the current tenant. Component instances created via the new scope
         /// will be disposed along with it.
         /// </summary>
-        /// <param name="tag">The tag applied to the <see cref="T:Autofac.ILifetimeScope"/>.</param>
+        /// <param name="tag">The tag applied to the <see cref="Autofac.ILifetimeScope"/>.</param>
         /// <returns>A new lifetime scope.</returns>
         public ILifetimeScope BeginLifetimeScope(object tag)
         {
@@ -261,7 +261,7 @@ namespace Autofac.Multitenant
         /// will be disposed along with it.
         /// </summary>
         /// <param name="configurationAction">
-        /// Action on a <see cref="T:Autofac.ContainerBuilder"/>
+        /// Action on a <see cref="Autofac.ContainerBuilder"/>
         /// that adds component registrations visible only in the new scope.
         /// </param>
         /// <returns>A new lifetime scope.</returns>
@@ -281,10 +281,10 @@ namespace Autofac.Multitenant
         /// will be disposed along with it.
         /// </summary>
         /// <param name="tag">
-        /// The tag applied to the <see cref="T:Autofac.ILifetimeScope"/>.
+        /// The tag applied to the <see cref="Autofac.ILifetimeScope"/>.
         /// </param>
         /// <param name="configurationAction">
-        /// Action on a <see cref="T:Autofac.ContainerBuilder"/>
+        /// Action on a <see cref="Autofac.ContainerBuilder"/>
         /// that adds component registrations visible only in the new scope.
         /// </param>
         /// <returns>A new lifetime scope.</returns>
@@ -610,11 +610,11 @@ namespace Autofac.Multitenant
         /// <param name="registration">The registration to resolve.</param>
         /// <param name="parameters">Parameters for the instance.</param>
         /// <returns>The component instance.</returns>
-        /// <exception cref="T:Autofac.Core.Registration.ComponentNotRegisteredException">
+        /// <exception cref="Autofac.Core.Registration.ComponentNotRegisteredException">
         /// Thrown if an attempt is made to resolve a component that is not registered
         /// for the current tenant.
         /// </exception>
-        /// <exception cref="T:Autofac.Core.DependencyResolutionException">
+        /// <exception cref="Autofac.Core.DependencyResolutionException">
         /// Thrown if there is a problem resolving the registration. For example,
         /// if the component registered requires another component be available
         /// but that required component is not available, this exception will be thrown.
@@ -625,7 +625,7 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Releases unmanaged and - optionally - managed resources
+        /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
         /// <param name="disposing">
         /// <see langword="true" /> to release both managed and unmanaged resources;
