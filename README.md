@@ -8,6 +8,6 @@ Please file issues and pull requests for this package in this repository rather 
 
 **BREAKING CHANGE**: As of v4.0.0, the `Autofac.Extras.Multitenant` package is `Autofac.Multitenant`.
 
-- [Documentation](http://autofac.readthedocs.io/en/latest/advanced/multitenant.html)
+- [Documentation](https://autofac.readthedocs.io/en/latest/advanced/multitenant.html)
 - [NuGet](https://www.nuget.org/packages/Autofac.Multitenant)
-- [Contributing](http://autofac.readthedocs.io/en/latest/contributors.html)
+- [Contributing](https://autofac.readthedocs.io/en/latest/contributors.html)
