@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>Autofac extension for multitenant application support.</Description>
-    <VersionPrefix>4.2.1</VersionPrefix>
+    <VersionPrefix>5.0.0</VersionPrefix>
     <TargetFrameworks>net451;netstandard1.1;netstandard2.0</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -33,7 +33,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.0.0" />
+    <PackageReference Include="Autofac" Version="5.0.0-ResolvedSe-00585" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.6.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>

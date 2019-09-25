@@ -607,8 +607,7 @@ namespace Autofac.Multitenant
         /// <summary>
         /// Resolve an instance of the provided registration within the current tenant context.
         /// </summary>
-        /// <param name="registration">The registration to resolve.</param>
-        /// <param name="parameters">Parameters for the instance.</param>
+        /// <param name="request">The resolve request.</param>
         /// <returns>The component instance.</returns>
         /// <exception cref="Autofac.Core.Registration.ComponentNotRegisteredException">
         /// Thrown if an attempt is made to resolve a component that is not registered
@@ -619,9 +618,9 @@ namespace Autofac.Multitenant
         /// if the component registered requires another component be available
         /// but that required component is not available, this exception will be thrown.
         /// </exception>
-        public object ResolveComponent(IComponentRegistration registration, IEnumerable<Parameter> parameters)
+        public object ResolveComponent(ResolveRequest request)
         {
-            return this.GetCurrentTenantScope().ResolveComponent(registration, parameters);
+            return this.GetCurrentTenantScope().ResolveComponent(request);
         }
 
         /// <summary>
