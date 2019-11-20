@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Threading.Tasks;
 using Autofac.Core;
 using Autofac.Core.Lifetime;
 using Autofac.Core.Resolving;
@@ -650,12 +651,43 @@ namespace Autofac.Multitenant
                 finally
                 {
                     _readWriteLock.ExitWriteLock();
+                    _readWriteLock.Dispose();
                 }
-
-                _readWriteLock.Dispose();
             }
 
             base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources - possibly async.
+        /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true" /> to release both managed and unmanaged resources;
+        /// <see langword="false" /> to release only unmanaged resources.
+        /// </param>
+        protected override async ValueTask DisposeAsync(bool disposing)
+        {
+            if (disposing)
+            {
+                _readWriteLock.EnterWriteLock();
+
+                try
+                {
+                    foreach (var scope in _tenantLifetimeScopes.Values)
+                    {
+                        await scope.DisposeAsync();
+                    }
+
+                    await this.ApplicationContainer.DisposeAsync();
+                }
+                finally
+                {
+                    _readWriteLock.ExitWriteLock();
+                    _readWriteLock.Dispose();
+                }
+            }
+
+            await base.DisposeAsync(disposing);
         }
     }
 }
