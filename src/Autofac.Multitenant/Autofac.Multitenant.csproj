@@ -33,11 +33,11 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.0-preview1.19504.10" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.0.0-develop-00622" />
+    <PackageReference Include="Autofac" Version="5.0.0-develop-00681" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.6.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
@@ -47,10 +47,10 @@
     <PackageReference Include="Microsoft.Net.RoslynDiagnostics" Version="2.6.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-62925-02" Condition="Exists('$(MSBuildThisFileDirectory)../../.git')">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" Condition="Exists('$(MSBuildThisFileDirectory)../../.git')">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta008">
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
   </ItemGroup>
