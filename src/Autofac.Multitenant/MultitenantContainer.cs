@@ -687,7 +687,7 @@ namespace Autofac.Multitenant
                 }
             }
 
-            await base.DisposeAsync(disposing);
+            // Do not call the base, otherwise the standard Dispose will fire.
         }
     }
 }
