@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+
 using Autofac;
 using Autofac.Multitenant;
 using Autofac.Multitenant.Test.Stubs;
@@ -716,6 +718,19 @@ namespace Autofac.Multitenant.Test
             {
                 Assert.True(tenantStub.IsDisposed);
             }
+        }
+
+        [Fact]
+        public async Task MultitenantContainer_AsyncDispose()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+            mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
+
+            await mtc.DisposeAsync();
         }
     }
 }
