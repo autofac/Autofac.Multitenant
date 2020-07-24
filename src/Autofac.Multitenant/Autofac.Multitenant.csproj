@@ -31,10 +31,13 @@
     <Company>Autofac</Company>
     <Product>Autofac</Product>
   </PropertyGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="5.2.0" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.6.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>

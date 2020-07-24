@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591;SA1602;SA1611</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Autofac.Multitenant.AspNetCore.Test</AssemblyName>
