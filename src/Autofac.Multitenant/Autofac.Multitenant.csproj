@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Autofac extension for multitenant application support.</Description>
     <VersionPrefix>5.0.1</VersionPrefix>
-    <TargetFrameworks>net461;netstandard2.0;netstandard2.1;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Autofac.Multitenant</AssemblyName>
@@ -31,13 +31,13 @@
     <Company>Autofac</Company>
     <Product>Autofac</Product>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.0" />
+  
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.0.0" />
+    <PackageReference Include="Autofac" Version="5.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.6.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
