@@ -51,40 +51,45 @@ function Get-DotNetProjectDirectory
 #>
 function Install-DotNetCli
 {
-  [CmdletBinding()]
-  Param(
-    [string]
-    $Version = "Latest"
-  )
+    [CmdletBinding()]
+    Param(
+      [string]
+      $Version = "Latest"
+    )
 
-  if ((Get-Command "dotnet.exe" -ErrorAction SilentlyContinue) -ne $null)
-  {
-    $installedVersion = dotnet --version
-    if ($installedVersion -eq $Version)
+    if ((Get-Command "dotnet.exe" -ErrorAction SilentlyContinue) -ne $null)
     {
-      Write-Message ".NET Core SDK version $Version is already installed"
-      return;
+        $installedVersion = dotnet --version
+        if ($installedVersion -eq $Version)
+        {
+            Write-Message ".NET Core SDK version $Version is already installed"
+            return;
+        }
     }
-  }
 
-  $callerPath = Split-Path $MyInvocation.PSCommandPath
-  $installDir = Join-Path -Path $callerPath -ChildPath ".dotnet\cli"
-  if (!(Test-Path $installDir))
-  {
-    New-Item -ItemType Directory -Path "$installDir" | Out-Null
-  }
+    $callerPath = Split-Path $MyInvocation.PSCommandPath
+    $installDir = Join-Path -Path $callerPath -ChildPath ".dotnet\cli"
+    if (!(Test-Path $installDir))
+    {
+        New-Item -ItemType Directory -Path "$installDir" | Out-Null
+    }
 
-  # Download the dotnet CLI install script
-  if (!(Test-Path .\dotnet\install.ps1))
-  {
-    Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile ".\.dotnet\dotnet-install.ps1"
-  }
+    # Download the dotnet CLI install script
+    if ($IsWindows) {
+        if (!(Test-Path ./.dotnet/dotnet-install.ps1)) {
+            Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile "./.dotnet/dotnet-install.ps1"
+        }
 
-  # Run the dotnet CLI install
-  & .\.dotnet\dotnet-install.ps1 -InstallDir "$installDir" -Version $Version
+        & ./.dotnet/dotnet-install.ps1 -InstallDir "$installDir" -Version $Version
+        $env:PATH = "$installDir;$env:PATH"
+    } else {
+        if (!(Test-Path ./.dotnet/dotnet-install.sh)) {
+            Invoke-WebRequest "https://dot.net/v1/dotnet-install.sh" -OutFile "./.dotnet/dotnet-install.sh"
+        }
 
-  # Add the dotnet folder path to the process.
-  $env:PATH = "$installDir;$env:PATH"
+        & bash ./.dotnet/dotnet-install.sh --install-dir "$installDir" --version $Version
+        $env:PATH = "$installDir`:$env:PATH"
+    }
 }
 
 <#
@@ -208,7 +213,16 @@ function Invoke-Test
     {
       Push-Location $Project
 
-      & dotnet test --configuration Release --logger:trx
+      & dotnet test `
+        --configuration Release `
+        --logger:trx `
+        /p:CollectCoverage=true `
+        /p:CoverletOutput="..\..\" `
+        /p:MergeWith="..\..\coverage.json" `
+        /p:CoverletOutputFormat="json%2clcov" `
+        /p:ExcludeByAttribute=CompilerGeneratedAttribute `
+        /p:ExcludeByAttribute=GeneratedCodeAttribute
+
       if ($LASTEXITCODE -ne 0)
       {
         Pop-Location
