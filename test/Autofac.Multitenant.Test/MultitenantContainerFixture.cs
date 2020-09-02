@@ -732,5 +732,18 @@ namespace Autofac.Multitenant.Test
 
             await mtc.DisposeAsync();
         }
+
+        [Fact]
+        public void MultitenantContainer_DiagnosticSourceNotNull()
+        {
+            var strategy = new StubTenantIdentificationStrategy()
+            {
+                TenantId = "tenant1",
+            };
+
+            var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+
+            Assert.NotNull(mtc.DiagnosticSource);
+        }
     }
 }
