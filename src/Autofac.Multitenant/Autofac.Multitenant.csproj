@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <Description>Autofac extension for multitenant application support.</Description>
-    <VersionPrefix>5.0.1</VersionPrefix>
+    <!-- VersionPrefix patched by AppVeyor -->
+    <VersionPrefix>0.0.1</VersionPrefix>
     <TargetFrameworks>netstandard2.0;netstandard2.1;</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Autofac.Multitenant</AssemblyName>
     <AssemblyOriginatorKeyFile>../../Autofac.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Autofac.Multitenant</PackageId>
     <PackageTags>autofac;di;ioc;dependencyinjection</PackageTags>
     <PackageReleaseNotes>Release notes are at https://github.com/autofac/Autofac.Multitenant/releases</PackageReleaseNotes>
@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="6.0.0-develop-01132" />
+    <PackageReference Include="Autofac" Version="6.0.0-develop-01134" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.6.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
