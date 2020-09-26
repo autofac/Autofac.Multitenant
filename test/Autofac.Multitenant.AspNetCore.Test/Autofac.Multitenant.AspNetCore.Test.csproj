@@ -7,7 +7,6 @@
     <AssemblyName>Autofac.Multitenant.AspNetCore.Test</AssemblyName>
     <AssemblyOriginatorKeyFile>../../Autofac.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Autofac.Multitenant.AspNetCore.Test</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
