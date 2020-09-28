@@ -689,5 +689,8 @@ namespace Autofac.Multitenant
 
             // Do not call the base, otherwise the standard Dispose will fire.
         }
+
+        /// <inheritdoc />
+        public DiagnosticListener DiagnosticSource => this.ApplicationContainer.DiagnosticSource;
     }
 }
