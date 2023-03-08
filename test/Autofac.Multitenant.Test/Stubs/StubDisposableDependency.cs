@@ -13,7 +13,7 @@ namespace Autofac.Multitenant.Test.Stubs
 
         public void Dispose()
         {
-            this.IsDisposed = true;
+            IsDisposed = true;
         }
     }
 }

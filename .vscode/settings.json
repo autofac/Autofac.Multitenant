@@ -11,12 +11,13 @@
     "paramref",
     "seealso",
     "typeparam",
+    "unconfigured",
     "unmanaged",
     "xunit"
   ],
   "coverage-gutters.coverageBaseDir": "artifacts/coverage",
   "coverage-gutters.coverageFileNames": [
-    "coverage.net6.0.info"
+    "coverage.info"
   ],
   "dotnet-test-explorer.runInParallel": true,
   "dotnet-test-explorer.testProjectPath": "test/**/*.Test.csproj",

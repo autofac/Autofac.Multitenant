@@ -31,13 +31,12 @@ namespace Autofac.Multitenant
                 throw new ArgumentNullException(nameof(strategy));
             }
 
-            object id;
-            if (strategy.TryIdentifyTenant(out id))
+            if (strategy.TryIdentifyTenant(out object id))
             {
                 return (T)id;
             }
 
-            return default(T);
+            return default;
         }
     }
 }

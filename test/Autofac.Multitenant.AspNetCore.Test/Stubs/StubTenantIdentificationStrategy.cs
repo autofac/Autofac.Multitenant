@@ -7,7 +7,7 @@ namespace Autofac.Multitenant.AspNetCore.Test.Stubs
     {
         public StubTenantIdentificationStrategy()
         {
-            this.IdentificationSuccess = true;
+            IdentificationSuccess = true;
         }
 
         public bool IdentificationSuccess { get; set; }
@@ -16,8 +16,8 @@ namespace Autofac.Multitenant.AspNetCore.Test.Stubs
 
         public bool TryIdentifyTenant(out object tenantId)
         {
-            tenantId = this.TenantId;
-            return this.IdentificationSuccess;
+            tenantId = TenantId;
+            return IdentificationSuccess;
         }
     }
 }

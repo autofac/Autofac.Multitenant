@@ -76,16 +76,16 @@ namespace Autofac.Multitenant
 
         /// <summary>
         /// Dictionary containing the set of tenant-specific lifetime scopes. Key
-        /// is <see cref="System.Object"/>, value is <see cref="ILifetimeScope"/>.
+        /// is <see cref="object"/>, value is <see cref="ILifetimeScope"/>.
         /// </summary>
         // Issue #280: Incorrect double-checked-lock pattern usage in MultitenantContainer.GetTenantScope
-        private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new Dictionary<object, ILifetimeScope>();
+        private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
 
         /// <summary>
         /// Reader-writer lock for locking modifications and initializations
         /// of tenant scopes.
         /// </summary>
-        private readonly ReaderWriterLockSlim _readWriteLock = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _readWriteLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
@@ -103,18 +103,8 @@ namespace Autofac.Multitenant
         /// </exception>
         public MultitenantContainer(ITenantIdentificationStrategy tenantIdentificationStrategy, IContainer applicationContainer)
         {
-            if (tenantIdentificationStrategy == null)
-            {
-                throw new ArgumentNullException(nameof(tenantIdentificationStrategy));
-            }
-
-            if (applicationContainer == null)
-            {
-                throw new ArgumentNullException(nameof(applicationContainer));
-            }
-
-            this.TenantIdentificationStrategy = tenantIdentificationStrategy;
-            this.ApplicationContainer = applicationContainer;
+            TenantIdentificationStrategy = tenantIdentificationStrategy ?? throw new ArgumentNullException(nameof(tenantIdentificationStrategy));
+            ApplicationContainer = applicationContainer ?? throw new ArgumentNullException(nameof(applicationContainer));
         }
 
         /// <summary>
@@ -122,9 +112,9 @@ namespace Autofac.Multitenant
         /// </summary>
         public event EventHandler<LifetimeScopeBeginningEventArgs> ChildLifetimeScopeBeginning
         {
-            add { this.GetCurrentTenantScope().ChildLifetimeScopeBeginning += value; }
+            add { GetCurrentTenantScope().ChildLifetimeScopeBeginning += value; }
 
-            remove { this.GetCurrentTenantScope().ChildLifetimeScopeBeginning -= value; }
+            remove { GetCurrentTenantScope().ChildLifetimeScopeBeginning -= value; }
         }
 
         /// <summary>
@@ -132,9 +122,9 @@ namespace Autofac.Multitenant
         /// </summary>
         public event EventHandler<LifetimeScopeEndingEventArgs> CurrentScopeEnding
         {
-            add { this.GetCurrentTenantScope().CurrentScopeEnding += value; }
+            add { GetCurrentTenantScope().CurrentScopeEnding += value; }
 
-            remove { this.GetCurrentTenantScope().CurrentScopeEnding -= value; }
+            remove { GetCurrentTenantScope().CurrentScopeEnding -= value; }
         }
 
         /// <summary>
@@ -142,9 +132,9 @@ namespace Autofac.Multitenant
         /// </summary>
         public event EventHandler<ResolveOperationBeginningEventArgs> ResolveOperationBeginning
         {
-            add { this.GetCurrentTenantScope().ResolveOperationBeginning += value; }
+            add { GetCurrentTenantScope().ResolveOperationBeginning += value; }
 
-            remove { this.GetCurrentTenantScope().ResolveOperationBeginning -= value; }
+            remove { GetCurrentTenantScope().ResolveOperationBeginning -= value; }
         }
 
         /// <summary>
@@ -166,7 +156,7 @@ namespace Autofac.Multitenant
         /// </value>
         public IComponentRegistry ComponentRegistry
         {
-            get { return this.GetCurrentTenantScope().ComponentRegistry; }
+            get { return GetCurrentTenantScope().ComponentRegistry; }
         }
 
         /// <summary>
@@ -183,14 +173,14 @@ namespace Autofac.Multitenant
         /// </remarks>
         public IDisposer Disposer
         {
-            get { return this.GetCurrentTenantScope().Disposer; }
+            get { return GetCurrentTenantScope().Disposer; }
         }
 
         /// <summary>
         /// Gets the tag applied to the current tenant's <see cref="ILifetimeScope"/>.
         /// </summary>
         /// <value>
-        /// An <see cref="System.Object"/> that identifies the current tenant's
+        /// An <see cref="object"/> that identifies the current tenant's
         /// lifetime scope.
         /// </value>
         /// <remarks>
@@ -200,7 +190,7 @@ namespace Autofac.Multitenant
         /// <seealso cref="Builder.IRegistrationBuilder{T, U, V}.InstancePerMatchingLifetimeScope(object[])"/>
         public object Tag
         {
-            get { return this.GetCurrentTenantScope().Tag; }
+            get { return GetCurrentTenantScope().Tag; }
         }
 
         /// <summary>
@@ -219,7 +209,7 @@ namespace Autofac.Multitenant
         /// <returns>A new lifetime scope.</returns>
         public ILifetimeScope BeginLifetimeScope()
         {
-            return this.GetCurrentTenantScope().BeginLifetimeScope();
+            return GetCurrentTenantScope().BeginLifetimeScope();
         }
 
         /// <summary>
@@ -230,7 +220,7 @@ namespace Autofac.Multitenant
         /// <returns>A new lifetime scope.</returns>
         public ILifetimeScope BeginLifetimeScope(object tag)
         {
-            return this.GetCurrentTenantScope().BeginLifetimeScope(tag);
+            return GetCurrentTenantScope().BeginLifetimeScope(tag);
         }
 
         /// <summary>
@@ -250,7 +240,7 @@ namespace Autofac.Multitenant
         /// </remarks>
         public ILifetimeScope BeginLifetimeScope(Action<ContainerBuilder> configurationAction)
         {
-            return this.GetCurrentTenantScope().BeginLifetimeScope(configurationAction);
+            return GetCurrentTenantScope().BeginLifetimeScope(configurationAction);
         }
 
         /// <summary>
@@ -273,20 +263,20 @@ namespace Autofac.Multitenant
         /// </remarks>
         public ILifetimeScope BeginLifetimeScope(object tag, Action<ContainerBuilder> configurationAction)
         {
-            return this.GetCurrentTenantScope().BeginLifetimeScope(tag, configurationAction);
+            return GetCurrentTenantScope().BeginLifetimeScope(tag, configurationAction);
         }
 
 #if NET5_0_OR_GREATER
         /// <inheritdoc />
         public ILifetimeScope BeginLoadContextLifetimeScope(AssemblyLoadContext loadContext, Action<ContainerBuilder> configurationAction)
         {
-            return this.GetCurrentTenantScope().BeginLoadContextLifetimeScope(loadContext, configurationAction);
+            return GetCurrentTenantScope().BeginLoadContextLifetimeScope(loadContext, configurationAction);
         }
 
         /// <inheritdoc />
         public ILifetimeScope BeginLoadContextLifetimeScope(object tag, AssemblyLoadContext loadContext, Action<ContainerBuilder> configurationAction)
         {
-            return this.GetCurrentTenantScope().BeginLoadContextLifetimeScope(tag, loadContext, configurationAction);
+            return GetCurrentTenantScope().BeginLoadContextLifetimeScope(tag, loadContext, configurationAction);
         }
 #endif
 
@@ -337,15 +327,12 @@ namespace Autofac.Multitenant
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            if (tenantId == null)
-            {
-                tenantId = this._defaultTenantId;
-            }
+            tenantId ??= _defaultTenantId;
 
             _readWriteLock.EnterUpgradeableReadLock();
             try
             {
-                if (this._tenantLifetimeScopes.ContainsKey(tenantId))
+                if (_tenantLifetimeScopes.ContainsKey(tenantId))
                 {
                     throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
                 }
@@ -353,7 +340,7 @@ namespace Autofac.Multitenant
                 _readWriteLock.EnterWriteLock();
                 try
                 {
-                    this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+                    _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
                 }
                 finally
                 {
@@ -404,24 +391,21 @@ namespace Autofac.Multitenant
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            if (tenantId == null)
-            {
-                tenantId = this._defaultTenantId;
-            }
+            tenantId ??= _defaultTenantId;
 
             // we're going to change the dictionary either way, dispense with the read-check
             _readWriteLock.EnterWriteLock();
             try
             {
                 var removed = false;
-                if (this._tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
+                if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
                 {
                     tenantScope.Dispose();
 
                     removed = _tenantLifetimeScopes.Remove(tenantId);
                 }
 
-                this._tenantLifetimeScopes[tenantId] = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+                _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
 
                 return removed;
             }
@@ -445,13 +429,12 @@ namespace Autofac.Multitenant
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "The results of this method change based on execution context.")]
         public ILifetimeScope GetCurrentTenantScope()
         {
-            var tenantId = (object)null;
-            if (this.TenantIdentificationStrategy.TryIdentifyTenant(out tenantId))
+            if (TenantIdentificationStrategy.TryIdentifyTenant(out var tenantId))
             {
-                return this.GetTenantScope(tenantId);
+                return GetTenantScope(tenantId);
             }
 
-            return this.GetTenantScope(null);
+            return GetTenantScope(null);
         }
 
         /// <summary>
@@ -464,16 +447,13 @@ namespace Autofac.Multitenant
         /// </param>
         public ILifetimeScope GetTenantScope(object tenantId)
         {
-            if (tenantId == null)
-            {
-                tenantId = this._defaultTenantId;
-            }
+            tenantId ??= _defaultTenantId;
 
             var tenantScope = (ILifetimeScope)null;
             _readWriteLock.EnterReadLock();
             try
             {
-                this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope);
+                _tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope);
             }
             finally
             {
@@ -490,10 +470,10 @@ namespace Autofac.Multitenant
                     // The check and [potential] scope creation are locked here to
                     // ensure atomicity. We don't want to check and then have another
                     // thread create the lifetime scope behind our backs.
-                    if (!this._tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
+                    if (!_tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
                     {
-                        tenantScope = this.ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
-                        this._tenantLifetimeScopes[tenantId] = tenantScope;
+                        tenantScope = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
+                        _tenantLifetimeScopes[tenantId] = tenantScope;
                     }
                 }
                 finally
@@ -531,10 +511,7 @@ namespace Autofac.Multitenant
             _readWriteLock.EnterReadLock();
             try
             {
-                if (tenantId == null)
-                {
-                    tenantId = this._defaultTenantId;
-                }
+                tenantId ??= _defaultTenantId;
 
                 return _tenantLifetimeScopes.ContainsKey(tenantId);
             }
@@ -551,16 +528,13 @@ namespace Autofac.Multitenant
         /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
         public bool RemoveTenant(object tenantId)
         {
-            if (tenantId == null)
-            {
-                tenantId = this._defaultTenantId;
-            }
+            tenantId ??= _defaultTenantId;
 
             // this should be a fairly rare operation, so we'll jump right to the write-lock
             _readWriteLock.EnterWriteLock();
             try
             {
-                if (this._tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
+                if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
                 {
                     tenantScope.Dispose();
 
@@ -612,7 +586,7 @@ namespace Autofac.Multitenant
         /// </exception>
         public object ResolveComponent(ResolveRequest request)
         {
-            return this.GetCurrentTenantScope().ResolveComponent(request);
+            return GetCurrentTenantScope().ResolveComponent(request);
         }
 
         /// <summary>
@@ -632,12 +606,12 @@ namespace Autofac.Multitenant
 
                 try
                 {
-                    foreach (var scope in this._tenantLifetimeScopes.Values)
+                    foreach (var scope in _tenantLifetimeScopes.Values)
                     {
                         scope.Dispose();
                     }
 
-                    this.ApplicationContainer.Dispose();
+                    ApplicationContainer.Dispose();
                 }
                 finally
                 {
@@ -669,7 +643,7 @@ namespace Autofac.Multitenant
                         await scope.DisposeAsync().ConfigureAwait(false);
                     }
 
-                    await this.ApplicationContainer.DisposeAsync().ConfigureAwait(false);
+                    await ApplicationContainer.DisposeAsync().ConfigureAwait(false);
                 }
                 finally
                 {
@@ -682,6 +656,6 @@ namespace Autofac.Multitenant
         }
 
         /// <inheritdoc />
-        public DiagnosticListener DiagnosticSource => this.ApplicationContainer.DiagnosticSource;
+        public DiagnosticListener DiagnosticSource => ApplicationContainer.DiagnosticSource;
     }
 }

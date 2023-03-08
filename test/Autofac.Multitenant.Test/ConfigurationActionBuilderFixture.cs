@@ -17,9 +17,11 @@ namespace Autofac.Multitenant.Test
         [Fact]
         public void Build_MultipleActionsRegistered()
         {
-            var builder = new ConfigurationActionBuilder();
-            builder.Add(b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
-            builder.Add(b => b.RegisterType<StubDependency2Impl1>().As<IStubDependency2>());
+            var builder = new ConfigurationActionBuilder
+            {
+                b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>(),
+                b => b.RegisterType<StubDependency2Impl1>().As<IStubDependency2>(),
+            };
             var built = builder.Build();
 
             var container = new ContainerBuilder().Build();
@@ -33,8 +35,10 @@ namespace Autofac.Multitenant.Test
         [Fact]
         public void Build_SingleActionRegistered()
         {
-            var builder = new ConfigurationActionBuilder();
-            builder.Add(b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
+            var builder = new ConfigurationActionBuilder
+            {
+                b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>(),
+            };
             var built = builder.Build();
 
             var container = new ContainerBuilder().Build();
