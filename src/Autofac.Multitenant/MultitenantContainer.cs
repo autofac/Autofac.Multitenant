@@ -28,6 +28,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+#if NET5_0_OR_GREATER
+using System.Runtime.Loader;
+#endif
 using System.Threading.Tasks;
 using Autofac.Core;
 using Autofac.Core.Lifetime;
@@ -298,6 +301,20 @@ namespace Autofac.Multitenant
         {
             return this.GetCurrentTenantScope().BeginLifetimeScope(tag, configurationAction);
         }
+
+#if NET5_0_OR_GREATER
+        /// <inheritdoc />
+        public ILifetimeScope BeginLoadContextLifetimeScope(AssemblyLoadContext loadContext, Action<ContainerBuilder> configurationAction)
+        {
+            return this.GetCurrentTenantScope().BeginLoadContextLifetimeScope(loadContext, configurationAction);
+        }
+
+        /// <inheritdoc />
+        public ILifetimeScope BeginLoadContextLifetimeScope(object tag, AssemblyLoadContext loadContext, Action<ContainerBuilder> configurationAction)
+        {
+            return this.GetCurrentTenantScope().BeginLoadContextLifetimeScope(tag, loadContext, configurationAction);
+        }
+#endif
 
         /// <summary>
         /// Allows configuration of tenant-specific components. You may only call this
