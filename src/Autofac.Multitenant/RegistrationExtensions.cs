@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) Autofac Project. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
+
 using Autofac.Builder;
 
 namespace Autofac.Multitenant
@@ -15,7 +17,7 @@ namespace Autofac.Multitenant
         /// <typeparam name="TActivatorData">Activator data type.</typeparam>
         /// <typeparam name="TRegistrationStyle">Registration style type.</typeparam>
         /// <param name="registration">Registration to set the lifetime scope on.</param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="registration" /> is <see langword="null" />.
         /// </exception>
         /// <remarks>

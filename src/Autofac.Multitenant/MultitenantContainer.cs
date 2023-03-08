@@ -1,37 +1,11 @@
-﻿// This software is part of the Autofac IoC container
-// Copyright © 2014 Autofac Contributors
-// https://autofac.org
-//
-// Permission is hereby granted, free of charge, to any person
-// obtaining a copy of this software and associated documentation
-// files (the "Software"), to deal in the Software without
-// restriction, including without limitation the rights to use,
-// copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following
-// conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-// OTHER DEALINGS IN THE SOFTWARE.
+﻿// Copyright (c) Autofac Project. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 #if NET5_0_OR_GREATER
 using System.Runtime.Loader;
 #endif
-using System.Threading.Tasks;
 using Autofac.Core;
 using Autofac.Core.Lifetime;
 using Autofac.Core.Resolving;
@@ -40,20 +14,20 @@ using Autofac.Util;
 namespace Autofac.Multitenant
 {
     /// <summary>
-    /// <see cref="Autofac.IContainer"/> implementation that provides the ability
+    /// <see cref="IContainer"/> implementation that provides the ability
     /// to register and resolve dependencies in a multitenant environment.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This container implementation modifies the definition of the standard
     /// container implementation by returning values that are tenant-specific.
-    /// For example, resolving a component via <see cref="Autofac.Multitenant.MultitenantContainer.ResolveComponent"/>
+    /// For example, resolving a component via <see cref="ResolveComponent"/>
     /// will yield a resolution of the dependency for the current tenant, not
     /// from a global container/lifetime.
     /// </para>
     /// <para>
     /// The "current tenant ID" is resolved from an implementation of
-    /// <see cref="Autofac.Multitenant.ITenantIdentificationStrategy"/>
+    /// <see cref="ITenantIdentificationStrategy"/>
     /// that is passed into the container during construction.
     /// </para>
     /// <para>
@@ -81,12 +55,12 @@ namespace Autofac.Multitenant
     /// </para>
     /// <para>
     /// You may explicitly create and configure a tenant lifetime scope
-    /// using the <see cref="Autofac.Multitenant.MultitenantContainer.ConfigureTenant"/>
+    /// using the <see cref="ConfigureTenant"/>
     /// method. If you need to perform some logic and build up the configuration
-    /// for a tenant, you can do that using a <see cref="Autofac.Multitenant.ConfigurationActionBuilder"/>.
+    /// for a tenant, you can do that using a <see cref="ConfigurationActionBuilder"/>.
     /// </para>
     /// </remarks>
-    /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+    /// <seealso cref="ConfigurationActionBuilder"/>
     [DebuggerDisplay("Tag = {Tag}, IsDisposed = {IsDisposed}")]
     public class MultitenantContainer : Disposable, IContainer
     {
@@ -102,7 +76,7 @@ namespace Autofac.Multitenant
 
         /// <summary>
         /// Dictionary containing the set of tenant-specific lifetime scopes. Key
-        /// is <see cref="System.Object"/>, value is <see cref="Autofac.ILifetimeScope"/>.
+        /// is <see cref="System.Object"/>, value is <see cref="ILifetimeScope"/>.
         /// </summary>
         // Issue #280: Incorrect double-checked-lock pattern usage in MultitenantContainer.GetTenantScope
         private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new Dictionary<object, ILifetimeScope>();
@@ -111,10 +85,10 @@ namespace Autofac.Multitenant
         /// Reader-writer lock for locking modifications and initializations
         /// of tenant scopes.
         /// </summary>
-        private readonly System.Threading.ReaderWriterLockSlim _readWriteLock = new System.Threading.ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _readWriteLock = new ReaderWriterLockSlim();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Autofac.Multitenant.MultitenantContainer"/> class.
+        /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
         /// </summary>
         /// <param name="tenantIdentificationStrategy">
         /// The strategy to use for identifying the current tenant.
@@ -123,7 +97,7 @@ namespace Autofac.Multitenant
         /// The application container from which tenant-specific lifetimes will
         /// be created.
         /// </param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="tenantIdentificationStrategy" /> or
         /// <paramref name="applicationContainer"/> is <see langword="null" />.
         /// </exception>
@@ -177,7 +151,7 @@ namespace Autofac.Multitenant
         /// Gets the base application container.
         /// </summary>
         /// <value>
-        /// An <see cref="Autofac.IContainer"/> on which all tenant lifetime
+        /// An <see cref="IContainer"/> on which all tenant lifetime
         /// scopes will be based.
         /// </value>
         public IContainer ApplicationContainer { get; private set; }
@@ -187,7 +161,7 @@ namespace Autofac.Multitenant
         /// components that provide them.
         /// </summary>
         /// <value>
-        /// An <see cref="Autofac.Core.IComponentRegistry"/> based on the current
+        /// An <see cref="IComponentRegistry"/> based on the current
         /// tenant context.
         /// </value>
         public IComponentRegistry ComponentRegistry
@@ -196,11 +170,11 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Gets the disposer associated with the current tenant's <see cref="Autofac.ILifetimeScope"/>.
+        /// Gets the disposer associated with the current tenant's <see cref="ILifetimeScope"/>.
         /// Component instances can be associated with it manually if required.
         /// </summary>
         /// <value>
-        /// An <see cref="Autofac.Core.IDisposer"/> used in cleaning up component
+        /// An <see cref="IDisposer"/> used in cleaning up component
         /// instances for the current tenant.
         /// </value>
         /// <remarks>
@@ -213,7 +187,7 @@ namespace Autofac.Multitenant
         }
 
         /// <summary>
-        /// Gets the tag applied to the current tenant's <see cref="Autofac.ILifetimeScope"/>.
+        /// Gets the tag applied to the current tenant's <see cref="ILifetimeScope"/>.
         /// </summary>
         /// <value>
         /// An <see cref="System.Object"/> that identifies the current tenant's
@@ -223,7 +197,7 @@ namespace Autofac.Multitenant
         /// Tags allow a level in the lifetime hierarchy to be identified.
         /// In most applications, tags are not necessary.
         /// </remarks>
-        /// <seealso cref="Autofac.Builder.IRegistrationBuilder{T, U, V}.InstancePerMatchingLifetimeScope(object[])"/>
+        /// <seealso cref="Builder.IRegistrationBuilder{T, U, V}.InstancePerMatchingLifetimeScope(object[])"/>
         public object Tag
         {
             get { return this.GetCurrentTenantScope().Tag; }
@@ -233,7 +207,7 @@ namespace Autofac.Multitenant
         /// Gets the strategy used for identifying the current tenant.
         /// </summary>
         /// <value>
-        /// An <see cref="Autofac.Multitenant.ITenantIdentificationStrategy"/>
+        /// An <see cref="ITenantIdentificationStrategy"/>
         /// used to identify the current tenant from the execution context.
         /// </value>
         public ITenantIdentificationStrategy TenantIdentificationStrategy { get; private set; }
@@ -252,7 +226,7 @@ namespace Autofac.Multitenant
         /// Begin a new nested scope for the current tenant. Component instances created via the new scope
         /// will be disposed along with it.
         /// </summary>
-        /// <param name="tag">The tag applied to the <see cref="Autofac.ILifetimeScope"/>.</param>
+        /// <param name="tag">The tag applied to the <see cref="ILifetimeScope"/>.</param>
         /// <returns>A new lifetime scope.</returns>
         public ILifetimeScope BeginLifetimeScope(object tag)
         {
@@ -265,7 +239,7 @@ namespace Autofac.Multitenant
         /// will be disposed along with it.
         /// </summary>
         /// <param name="configurationAction">
-        /// Action on a <see cref="Autofac.ContainerBuilder"/>
+        /// Action on a <see cref="ContainerBuilder"/>
         /// that adds component registrations visible only in the new scope.
         /// </param>
         /// <returns>A new lifetime scope.</returns>
@@ -285,10 +259,10 @@ namespace Autofac.Multitenant
         /// will be disposed along with it.
         /// </summary>
         /// <param name="tag">
-        /// The tag applied to the <see cref="Autofac.ILifetimeScope"/>.
+        /// The tag applied to the <see cref="ILifetimeScope"/>.
         /// </param>
         /// <param name="configurationAction">
-        /// Action on a <see cref="Autofac.ContainerBuilder"/>
+        /// Action on a <see cref="ContainerBuilder"/>
         /// that adds component registrations visible only in the new scope.
         /// </param>
         /// <returns>A new lifetime scope.</returns>
@@ -326,13 +300,13 @@ namespace Autofac.Multitenant
         /// tenant" - the tenant that is used when no tenant ID can be determined.
         /// </param>
         /// <param name="configuration">
-        /// An action that uses a <see cref="Autofac.ContainerBuilder"/> to set
+        /// An action that uses a <see cref="ContainerBuilder"/> to set
         /// up registrations for the tenant.
         /// </param>
         /// <remarks>
         /// <para>
         /// If you need to configure a tenant across multiple registration
-        /// calls, consider using a <see cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// calls, consider using a <see cref="ConfigurationActionBuilder"/>
         /// and configuring the tenant using the aggregate configuration
         /// action it produces.
         /// </para>
@@ -347,14 +321,14 @@ namespace Autofac.Multitenant
         /// other mechanism.
         /// </para>
         /// </remarks>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
         /// </exception>
         /// <exception cref="InvalidOperationException">
         /// Thrown if the tenant indicated by <paramref name="tenantId" />
         /// has already been configured.
         /// </exception>
-        /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// <seealso cref="ConfigurationActionBuilder"/>
         /// <seealso cref="ReconfigureTenant(object, Action{ContainerBuilder})"/>
         public void ConfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
         {
@@ -402,13 +376,13 @@ namespace Autofac.Multitenant
         /// tenant" - the tenant that is used when no tenant ID can be determined.
         /// </param>
         /// <param name="configuration">
-        /// An action that uses a <see cref="Autofac.ContainerBuilder"/> to set
+        /// An action that uses a <see cref="ContainerBuilder"/> to set
         /// up registrations for the tenant.
         /// </param>
         /// <remarks>
         /// <para>
         /// If you need to configure a tenant across multiple registration
-        /// calls, consider using a <see cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// calls, consider using a <see cref="ConfigurationActionBuilder"/>
         /// and configuring the tenant using the aggregate configuration
         /// action it produces.
         /// </para>
@@ -417,11 +391,11 @@ namespace Autofac.Multitenant
         /// use <see cref="ConfigureTenant(object, Action{ContainerBuilder})"/>.
         /// </para>
         /// </remarks>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
         /// </exception>
         /// <returns><c>true</c> if an existing configuration was removed; otherwise, <c>false</c>.</returns>
-        /// <seealso cref="Autofac.Multitenant.ConfigurationActionBuilder"/>
+        /// <seealso cref="ConfigurationActionBuilder"/>
         /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
         public bool ReconfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
         {
@@ -463,9 +437,9 @@ namespace Autofac.Multitenant
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This method uses the <see cref="Autofac.Multitenant.MultitenantContainer.TenantIdentificationStrategy"/>
+        /// This method uses the <see cref="TenantIdentificationStrategy"/>
         /// to retrieve the current tenant ID and then retrieves the scope
-        /// using <see cref="Autofac.Multitenant.MultitenantContainer.GetTenantScope"/>.
+        /// using <see cref="GetTenantScope"/>.
         /// </para>
         /// </remarks>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "The results of this method change based on execution context.")]
@@ -627,11 +601,11 @@ namespace Autofac.Multitenant
         /// </summary>
         /// <param name="request">The resolve request.</param>
         /// <returns>The component instance.</returns>
-        /// <exception cref="Autofac.Core.Registration.ComponentNotRegisteredException">
+        /// <exception cref="Core.Registration.ComponentNotRegisteredException">
         /// Thrown if an attempt is made to resolve a component that is not registered
         /// for the current tenant.
         /// </exception>
-        /// <exception cref="Autofac.Core.DependencyResolutionException">
+        /// <exception cref="DependencyResolutionException">
         /// Thrown if there is a problem resolving the registration. For example,
         /// if the component registered requires another component be available
         /// but that required component is not available, this exception will be thrown.
@@ -692,10 +666,10 @@ namespace Autofac.Multitenant
                 {
                     foreach (var scope in _tenantLifetimeScopes.Values)
                     {
-                        await scope.DisposeAsync();
+                        await scope.DisposeAsync().ConfigureAwait(false);
                     }
 
-                    await this.ApplicationContainer.DisposeAsync();
+                    await this.ApplicationContainer.DisposeAsync().ConfigureAwait(false);
                 }
                 finally
                 {

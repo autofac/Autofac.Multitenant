@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿// Copyright (c) Autofac Project. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
+
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Multitenant.AspNetCore.Test.Stubs;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Autofac.Multitenant.AspNetCore.Test
 {
@@ -22,9 +22,9 @@ namespace Autofac.Multitenant.AspNetCore.Test
             {
                 TenantId = "tenant1",
             };
-            var mtc = new MultitenantContainer(strategy, builder.Build());
+            using var mtc = new MultitenantContainer(strategy, builder.Build());
 
-            var serviceProvider = new AutofacServiceProvider(mtc);
+            using var serviceProvider = new AutofacServiceProvider(mtc);
 
             // Two resolutions for a single tenant
             var dep1 = serviceProvider.GetService<IStubDependency1>();
@@ -51,11 +51,11 @@ namespace Autofac.Multitenant.AspNetCore.Test
             {
                 TenantId = "tenant1",
             };
-            var mtc = new MultitenantContainer(strategy, builder.Build());
+            using var mtc = new MultitenantContainer(strategy, builder.Build());
             mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
             mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().As<IStubDependency1>());
 
-            var serviceProvider = new AutofacServiceProvider(mtc);
+            using var serviceProvider = new AutofacServiceProvider(mtc);
 
             Assert.IsType<StubDependency1Impl2>(serviceProvider.GetService<IStubDependency1>());
             strategy.TenantId = "tenant2";
@@ -75,9 +75,9 @@ namespace Autofac.Multitenant.AspNetCore.Test
             {
                 TenantId = "tenant1",
             };
-            var mtc = new MultitenantContainer(strategy, builder.Build());
+            using var mtc = new MultitenantContainer(strategy, builder.Build());
 
-            var serviceProvider = new AutofacServiceProvider(mtc);
+            using var serviceProvider = new AutofacServiceProvider(mtc);
 
             Assert.IsType<StubDependency1Impl1>(serviceProvider.GetService<IStubDependency1>());
         }

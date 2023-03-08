@@ -1,20 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright (c) Autofac Project. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
+
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Security;
-using Autofac;
 
 namespace Autofac.Multitenant
 {
     /// <summary>
     /// Allows you to build up a set of configuration actions that can be used
-    /// all at once to configure a new <see cref="Autofac.ILifetimeScope"/>.
+    /// all at once to configure a new <see cref="ILifetimeScope"/>.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Usually when you are building an <see cref="Autofac.ILifetimeScope"/>
+    /// Usually when you are building an <see cref="ILifetimeScope"/>
     /// and you wish to update the registrations in the new scope, you are
     /// required to pass in a single lambda configuration action. Sometimes,
     /// though, there is a need to perform some logic, or otherwise programmatically
@@ -23,7 +20,7 @@ namespace Autofac.Multitenant
     /// </para>
     /// <para>
     /// This builder allows you to collect a set of configuration actions and
-    /// use a final <see cref="Autofac.Multitenant.ConfigurationActionBuilder.Build"/>
+    /// use a final <see cref="Build"/>
     /// method to create a single aggregate action that can be used to finally
     /// create the lifetime scope.
     /// </para>
@@ -36,7 +33,7 @@ namespace Autofac.Multitenant
         /// in the builder.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.Action{T}"/> that contains the aggregate set of
+        /// A <see cref="Action{T}"/> that contains the aggregate set of
         /// registered actions that have been added to this builder.
         /// </returns>
         public Action<ContainerBuilder> Build()
@@ -48,7 +45,7 @@ namespace Autofac.Multitenant
             }
             else
             {
-                return (Action<ContainerBuilder>)Action<ContainerBuilder>.Combine(list.ToArray());
+                return (Action<ContainerBuilder>)Delegate.Combine(list.ToArray());
             }
         }
     }
