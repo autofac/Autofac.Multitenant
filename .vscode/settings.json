@@ -1,0 +1,28 @@
+{
+  "cSpell.words": [
+    "autofac",
+    "cref",
+    "diagnoser",
+    "diagnosers",
+    "inheritdoc",
+    "langword",
+    "multitenancy",
+    "multitenant",
+    "netcoreapp",
+    "paramref",
+    "seealso",
+    "typeparam",
+    "unconfigured",
+    "unmanaged",
+    "xunit"
+  ],
+  "coverage-gutters.coverageBaseDir": "artifacts/coverage",
+  "coverage-gutters.coverageFileNames": [
+    "coverage.info"
+  ],
+  "dotnet-test-explorer.runInParallel": true,
+  "dotnet-test-explorer.testProjectPath": "test/**/*.Test.csproj",
+  "files.watcherExclude": {
+    "**/target": true
+  }
+}
