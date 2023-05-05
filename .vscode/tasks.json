@@ -1,0 +1,45 @@
+{
+  "tasks": [
+    {
+      "args": [
+        "build",
+        "${workspaceFolder}/Autofac.Multitenant.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "command": "dotnet",
+      "group": {
+        "isDefault": true,
+        "kind": "build"
+      },
+      "label": "build",
+      "problemMatcher": "$msCompile",
+      "type": "process"
+    },
+    {
+      "args": [
+        "test",
+        "${workspaceFolder}/Autofac.Multitenant.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary",
+        "--results-directory",
+        "\"artifacts/coverage\"",
+        "--logger:trx",
+        "/p:CoverletOutput=\"${workspaceFolder}/artifacts/coverage/\"",
+        "/p:CollectCoverage=true",
+        "/p:CoverletOutputFormat=lcov",
+        "/p:Exclude=\"[System.*]*\"",
+        "-m:1"
+      ],
+      "command": "dotnet",
+      "group": {
+        "isDefault": true,
+        "kind": "test"
+      },
+      "label": "test",
+      "problemMatcher": "$msCompile",
+      "type": "process"
+    }
+  ],
+  "version": "2.0.0"
+}
