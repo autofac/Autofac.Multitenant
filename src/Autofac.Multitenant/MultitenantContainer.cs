@@ -82,10 +82,10 @@ public class MultitenantContainer : Disposable, IContainer
     private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
 
     /// <summary>
-    /// Reader-writer lock for locking modifications and initializations
+    /// Semaphore for locking modifications and initializations
     /// of tenant scopes.
     /// </summary>
-    private readonly ReaderWriterLockSlim _readWriteLock = new();
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
@@ -329,7 +329,7 @@ public class MultitenantContainer : Disposable, IContainer
 
         tenantId ??= _defaultTenantId;
 
-        _readWriteLock.EnterUpgradeableReadLock();
+        _semaphore.Wait();
         try
         {
             if (_tenantLifetimeScopes.ContainsKey(tenantId))
@@ -337,19 +337,11 @@ public class MultitenantContainer : Disposable, IContainer
                 throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
             }
 
-            _readWriteLock.EnterWriteLock();
-            try
-            {
-                _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
-            }
-            finally
-            {
-                _readWriteLock.ExitWriteLock();
-            }
+            _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
         }
         finally
         {
-            _readWriteLock.ExitUpgradeableReadLock();
+            _semaphore.Release();
         }
     }
 
@@ -394,7 +386,7 @@ public class MultitenantContainer : Disposable, IContainer
         tenantId ??= _defaultTenantId;
 
         // we're going to change the dictionary either way, dispense with the read-check
-        _readWriteLock.EnterWriteLock();
+        _semaphore.Wait();
         try
         {
             var removed = false;
@@ -411,7 +403,7 @@ public class MultitenantContainer : Disposable, IContainer
         }
         finally
         {
-            _readWriteLock.ExitWriteLock();
+            _semaphore.Release();
         }
     }
 
@@ -450,20 +442,20 @@ public class MultitenantContainer : Disposable, IContainer
         tenantId ??= _defaultTenantId;
 
         var tenantScope = (ILifetimeScope)null;
-        _readWriteLock.EnterReadLock();
+        _semaphore.Wait();
         try
         {
             _tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope);
         }
         finally
         {
-            _readWriteLock.ExitReadLock();
+            _semaphore.Release();
         }
 
         if (tenantScope == null)
         {
             // just go straight to write-lock, chances of not needing it at this point would be low
-            _readWriteLock.EnterWriteLock();
+            _semaphore.Wait();
 
             try
             {
@@ -478,7 +470,7 @@ public class MultitenantContainer : Disposable, IContainer
             }
             finally
             {
-                _readWriteLock.ExitWriteLock();
+                _semaphore.Release();
             }
         }
 
@@ -490,14 +482,14 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public IEnumerable<object> GetTenants()
     {
-        _readWriteLock.EnterReadLock();
+        _semaphore.Wait();
         try
         {
             return new List<object>(_tenantLifetimeScopes.Keys);
         }
         finally
         {
-            _readWriteLock.ExitReadLock();
+            _semaphore.Release();
         }
     }
 
@@ -508,7 +500,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
     public bool TenantIsConfigured(object tenantId)
     {
-        _readWriteLock.EnterReadLock();
+        _semaphore.Wait();
         try
         {
             tenantId ??= _defaultTenantId;
@@ -517,7 +509,7 @@ public class MultitenantContainer : Disposable, IContainer
         }
         finally
         {
-            _readWriteLock.ExitReadLock();
+            _semaphore.Release();
         }
     }
 
@@ -531,7 +523,7 @@ public class MultitenantContainer : Disposable, IContainer
         tenantId ??= _defaultTenantId;
 
         // this should be a fairly rare operation, so we'll jump right to the write-lock
-        _readWriteLock.EnterWriteLock();
+        _semaphore.Wait();
         try
         {
             if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
@@ -545,7 +537,7 @@ public class MultitenantContainer : Disposable, IContainer
         }
         finally
         {
-            _readWriteLock.ExitWriteLock();
+            _semaphore.Release();
         }
     }
 
@@ -554,7 +546,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public void ClearTenants()
     {
-        _readWriteLock.EnterWriteLock();
+        _semaphore.Wait();
         try
         {
             foreach (var tenantScope in _tenantLifetimeScopes.Values)
@@ -566,7 +558,7 @@ public class MultitenantContainer : Disposable, IContainer
         }
         finally
         {
-            _readWriteLock.ExitWriteLock();
+            _semaphore.Release();
         }
     }
 
@@ -602,7 +594,7 @@ public class MultitenantContainer : Disposable, IContainer
         {
             // Lock the lifetime scope table so no threads can add new lifetime
             // scopes while we're disposing.
-            _readWriteLock.EnterWriteLock();
+            _semaphore.Wait();
 
             try
             {
@@ -615,8 +607,8 @@ public class MultitenantContainer : Disposable, IContainer
             }
             finally
             {
-                _readWriteLock.ExitWriteLock();
-                _readWriteLock.Dispose();
+                _semaphore.Release();
+                _semaphore.Dispose();
             }
         }
 
@@ -634,7 +626,7 @@ public class MultitenantContainer : Disposable, IContainer
     {
         if (disposing)
         {
-            _readWriteLock.EnterWriteLock();
+            await _semaphore.WaitAsync();
 
             try
             {
@@ -647,8 +639,8 @@ public class MultitenantContainer : Disposable, IContainer
             }
             finally
             {
-                _readWriteLock.ExitWriteLock();
-                _readWriteLock.Dispose();
+                _semaphore.Release();
+                _semaphore.Dispose();
             }
         }
 
