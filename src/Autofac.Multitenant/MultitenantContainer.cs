@@ -626,7 +626,7 @@ public class MultitenantContainer : Disposable, IContainer
     {
         if (disposing)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
