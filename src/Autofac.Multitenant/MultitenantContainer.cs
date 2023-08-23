@@ -336,16 +336,20 @@ public class MultitenantContainer : Disposable, IContainer
     /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
     /// This should happen very rarely, hopefully never.
     /// </summary>
-    private void CreateTenantScope(object tenantId, Action<ContainerBuilder> configuration = null)
+    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder> configuration = null)
     {
         var lifetimeScope = configuration != null
             ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
             : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
 
-        if (!_tenantLifetimeScopes.TryAdd(tenantId, lifetimeScope))
+        var setLifetimeScope = _tenantLifetimeScopes.GetOrAdd(tenantId, lifetimeScope);
+
+        if (setLifetimeScope != lifetimeScope)
         {
             lifetimeScope.Dispose();
         }
+
+        return setLifetimeScope;
     }
 
     /// <summary>
@@ -434,12 +438,12 @@ public class MultitenantContainer : Disposable, IContainer
     {
         tenantId ??= _defaultTenantId;
 
-        if (!_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope))
+        if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope))
         {
-            CreateTenantScope(tenantId);
+            return tenantScope;
         }
 
-        return tenantScope;
+        return CreateTenantScope(tenantId);
     }
 
     /// <summary>
