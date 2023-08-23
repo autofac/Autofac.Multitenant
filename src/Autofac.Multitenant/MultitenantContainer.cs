@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Autofac Project. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 #if NET5_0_OR_GREATER
@@ -79,13 +80,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// is <see cref="object"/>, value is <see cref="ILifetimeScope"/>.
     /// </summary>
     // Issue #280: Incorrect double-checked-lock pattern usage in MultitenantContainer.GetTenantScope
-    private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
-
-    /// <summary>
-    /// Semaphore for locking modifications and initializations
-    /// of tenant scopes.
-    /// </summary>
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly ConcurrentDictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
@@ -329,19 +324,27 @@ public class MultitenantContainer : Disposable, IContainer
 
         tenantId ??= _defaultTenantId;
 
-        _semaphore.Wait();
-        try
+        if (_tenantLifetimeScopes.ContainsKey(tenantId))
         {
-            if (_tenantLifetimeScopes.ContainsKey(tenantId))
-            {
-                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
-            }
-
-            _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+            throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
         }
-        finally
+
+        CreateTenantScope(tenantId, configuration);
+    }
+
+    /// <summary>
+    /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
+    /// This should happen very rarely, hopefully never.
+    /// </summary>
+    private void CreateTenantScope(object tenantId, Action<ContainerBuilder> configuration = null)
+    {
+        var lifetimeScope = configuration != null
+            ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
+            : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
+
+        if (!_tenantLifetimeScopes.TryAdd(tenantId, lifetimeScope))
         {
-            _semaphore.Release();
+            lifetimeScope.Dispose();
         }
     }
 
@@ -385,26 +388,16 @@ public class MultitenantContainer : Disposable, IContainer
 
         tenantId ??= _defaultTenantId;
 
-        // we're going to change the dictionary either way, dispense with the read-check
-        _semaphore.Wait();
-        try
+        var removed = false;
+        if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
         {
-            var removed = false;
-            if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
-            {
-                tenantScope.Dispose();
-
-                removed = _tenantLifetimeScopes.Remove(tenantId);
-            }
-
-            _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
-
-            return removed;
+            tenantScope.Dispose();
+            removed = true;
         }
-        finally
-        {
-            _semaphore.Release();
-        }
+
+        CreateTenantScope(tenantId, configuration);
+
+        return removed;
     }
 
     /// <summary>
@@ -441,37 +434,9 @@ public class MultitenantContainer : Disposable, IContainer
     {
         tenantId ??= _defaultTenantId;
 
-        var tenantScope = (ILifetimeScope)null;
-        _semaphore.Wait();
-        try
+        if (!_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope))
         {
-            _tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-
-        if (tenantScope == null)
-        {
-            // just go straight to write-lock, chances of not needing it at this point would be low
-            _semaphore.Wait();
-
-            try
-            {
-                // The check and [potential] scope creation are locked here to
-                // ensure atomicity. We don't want to check and then have another
-                // thread create the lifetime scope behind our backs.
-                if (!_tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
-                {
-                    tenantScope = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
-                    _tenantLifetimeScopes[tenantId] = tenantScope;
-                }
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            CreateTenantScope(tenantId);
         }
 
         return tenantScope;
@@ -480,18 +445,12 @@ public class MultitenantContainer : Disposable, IContainer
     /// <summary>
     /// Returns collection of all registered tenants IDs.
     /// </summary>
+#pragma warning disable CA1024
     public IEnumerable<object> GetTenants()
     {
-        _semaphore.Wait();
-        try
-        {
-            return new List<object>(_tenantLifetimeScopes.Keys);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        return new List<object>(_tenantLifetimeScopes.Keys);
     }
+#pragma warning restore CA1024
 
     /// <summary>
     /// Returns whether the given tenant ID has been configured.
@@ -500,17 +459,9 @@ public class MultitenantContainer : Disposable, IContainer
     /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
     public bool TenantIsConfigured(object tenantId)
     {
-        _semaphore.Wait();
-        try
-        {
-            tenantId ??= _defaultTenantId;
+        tenantId ??= _defaultTenantId;
 
-            return _tenantLifetimeScopes.ContainsKey(tenantId);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        return _tenantLifetimeScopes.ContainsKey(tenantId);
     }
 
     /// <summary>
@@ -522,23 +473,14 @@ public class MultitenantContainer : Disposable, IContainer
     {
         tenantId ??= _defaultTenantId;
 
-        // this should be a fairly rare operation, so we'll jump right to the write-lock
-        _semaphore.Wait();
-        try
+        if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
         {
-            if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
-            {
-                tenantScope.Dispose();
+            tenantScope.Dispose();
 
-                return _tenantLifetimeScopes.Remove(tenantId);
-            }
+            return true;
+        }
 
-            return false;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        return false;
     }
 
     /// <summary>
@@ -546,19 +488,12 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public void ClearTenants()
     {
-        _semaphore.Wait();
-        try
+        foreach (var tenantId in _tenantLifetimeScopes.Keys)
         {
-            foreach (var tenantScope in _tenantLifetimeScopes.Values)
+            if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
             {
                 tenantScope.Dispose();
             }
-
-            _tenantLifetimeScopes.Clear();
-        }
-        finally
-        {
-            _semaphore.Release();
         }
     }
 
@@ -592,24 +527,12 @@ public class MultitenantContainer : Disposable, IContainer
     {
         if (disposing)
         {
-            // Lock the lifetime scope table so no threads can add new lifetime
-            // scopes while we're disposing.
-            _semaphore.Wait();
-
-            try
+            foreach (var scope in _tenantLifetimeScopes.Values)
             {
-                foreach (var scope in _tenantLifetimeScopes.Values)
-                {
-                    scope.Dispose();
-                }
+                scope.Dispose();
+            }
 
-                ApplicationContainer.Dispose();
-            }
-            finally
-            {
-                _semaphore.Release();
-                _semaphore.Dispose();
-            }
+            ApplicationContainer.Dispose();
         }
 
         base.Dispose(disposing);
@@ -626,22 +549,12 @@ public class MultitenantContainer : Disposable, IContainer
     {
         if (disposing)
         {
-            await _semaphore.WaitAsync().ConfigureAwait(false);
-
-            try
+            foreach (var scope in _tenantLifetimeScopes.Values)
             {
-                foreach (var scope in _tenantLifetimeScopes.Values)
-                {
-                    await scope.DisposeAsync().ConfigureAwait(false);
-                }
+                await scope.DisposeAsync().ConfigureAwait(false);
+            }
 
-                await ApplicationContainer.DisposeAsync().ConfigureAwait(false);
-            }
-            finally
-            {
-                _semaphore.Release();
-                _semaphore.Dispose();
-            }
+            await ApplicationContainer.DisposeAsync().ConfigureAwait(false);
         }
 
         // Do not call the base, otherwise the standard Dispose will fire.
