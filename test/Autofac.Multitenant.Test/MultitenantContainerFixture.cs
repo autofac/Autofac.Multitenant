@@ -519,6 +519,21 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public void RemoveTenant_ReturnsFalseWhenNotPresent()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+
+        var removed = mtc.RemoveTenant("tenant2");
+
+        Assert.False(removed);
+    }
+
+    [Fact]
     public void ReconfigureTenant_Reconfigure()
     {
         var strategy = new StubTenantIdentificationStrategy()
