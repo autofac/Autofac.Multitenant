@@ -125,6 +125,19 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public void ConfigureTenant_ThrowsAfterDisposal()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => mtc.ConfigureTenant("tenant1", _ => { }));
+    }
+
+    [Fact]
     public void Ctor_NullApplicationContainer()
     {
         Assert.Throws<ArgumentNullException>(() => new MultitenantContainer(new StubTenantIdentificationStrategy(), null));
