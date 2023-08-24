@@ -85,7 +85,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <summary>
     /// Flag that disallows creating a new scope while disposing or after that.
     /// </summary>
-    private int _isDisposed = 0;
+    private int _isDisposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
