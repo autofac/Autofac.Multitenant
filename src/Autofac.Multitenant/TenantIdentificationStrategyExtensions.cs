@@ -24,7 +24,7 @@ public static class TenantIdentificationStrategyExtensions
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="strategy" /> is <see langword="null" />.
     /// </exception>
-    public static T IdentifyTenant<T>(this ITenantIdentificationStrategy strategy)
+    public static T? IdentifyTenant<T>(this ITenantIdentificationStrategy strategy)
     {
         if (strategy == null)
         {

@@ -25,7 +25,6 @@ namespace Autofac.Multitenant;
 /// create the lifetime scope.
 /// </para>
 /// </remarks>
-[SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification = "This builder behaves like a collection but it is specifically for building an aggregate action, not just collecting them.")]
 public class ConfigurationActionBuilder : List<Action<ContainerBuilder>>
 {
     /// <summary>
@@ -45,7 +44,7 @@ public class ConfigurationActionBuilder : List<Action<ContainerBuilder>>
         }
         else
         {
-            return (Action<ContainerBuilder>)Delegate.Combine(list.ToArray());
+            return (Action<ContainerBuilder>)Delegate.Combine(list.ToArray())!;
         }
     }
 }

@@ -341,7 +341,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
     /// This should happen very rarely, hopefully never.
     /// </summary>
-    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder> configuration = null)
+    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder>? configuration = null)
     {
         if (_isDisposed == 1)
         {
@@ -425,7 +425,6 @@ public class MultitenantContainer : Disposable, IContainer
     /// using <see cref="GetTenantScope"/>.
     /// </para>
     /// </remarks>
-    [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "The results of this method change based on execution context.")]
     public ILifetimeScope GetCurrentTenantScope()
     {
         if (TenantIdentificationStrategy.TryIdentifyTenant(out var tenantId))
@@ -444,7 +443,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// value is <see langword="null" />, the scope is returned for the "default
     /// tenant" - the tenant that is used when no tenant ID can be determined.
     /// </param>
-    public ILifetimeScope GetTenantScope(object tenantId)
+    public ILifetimeScope GetTenantScope(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
 
