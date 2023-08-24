@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Autofac Project. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using Autofac.Core.Lifetime;
+using Autofac.Core.Resolving;
 using Autofac.Multitenant.Test.Stubs;
 
 namespace Autofac.Multitenant.Test;
@@ -122,6 +124,19 @@ public class MultitenantContainerFixture
         };
         using var mtc = new MultitenantContainer(strategy, builder.Build());
         Assert.Throws<ArgumentNullException>(() => mtc.ConfigureTenant("tenant1", null));
+    }
+
+    [Fact]
+    public void ConfigureTenant_ThrowsAfterDisposal()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => mtc.ConfigureTenant("tenant1", _ => { }));
     }
 
     [Fact]
@@ -506,6 +521,21 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public void RemoveTenant_ReturnsFalseWhenNotPresent()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+
+        var removed = mtc.RemoveTenant("tenant2");
+
+        Assert.False(removed);
+    }
+
+    [Fact]
     public void ReconfigureTenant_Reconfigure()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -739,5 +769,53 @@ public class MultitenantContainerFixture
         using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
 
         Assert.NotNull(mtc.DiagnosticSource);
+    }
+
+    [Fact]
+    public void ResolveOperationBeginning_FiresWhenResolving()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
+
+        Assert.Raises<ResolveOperationBeginningEventArgs>(
+            e => mtc.ResolveOperationBeginning += e,
+            e => mtc.ResolveOperationBeginning -= e,
+            () => mtc.GetTenantScope("tenant1").Resolve<IStubDependency1>());
+    }
+
+    [Fact]
+    public void ChildLifetimeScopeBeginning_FiresWhenChildScopeIsCreated()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
+
+        Assert.Raises<LifetimeScopeBeginningEventArgs>(
+            e => mtc.ChildLifetimeScopeBeginning += e,
+            e => mtc.ChildLifetimeScopeBeginning -= e,
+            () => mtc.GetTenantScope("tenant1").BeginLifetimeScope());
+    }
+
+    [Fact]
+    public void CurrentScopeEnding_FiresWhenScopeDisposed()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
+
+        Assert.Raises<LifetimeScopeEndingEventArgs>(
+            e => mtc.CurrentScopeEnding += e,
+            e => mtc.CurrentScopeEnding -= e,
+            () => mtc.RemoveTenant("tenant1"));
     }
 }

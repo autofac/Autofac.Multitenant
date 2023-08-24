@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Autofac Project. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 #if NET5_0_OR_GREATER
@@ -79,13 +80,12 @@ public class MultitenantContainer : Disposable, IContainer
     /// is <see cref="object"/>, value is <see cref="ILifetimeScope"/>.
     /// </summary>
     // Issue #280: Incorrect double-checked-lock pattern usage in MultitenantContainer.GetTenantScope
-    private readonly Dictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
+    private readonly ConcurrentDictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
 
     /// <summary>
-    /// Reader-writer lock for locking modifications and initializations
-    /// of tenant scopes.
+    /// Flag that disallows creating a new scope while disposing or after that.
     /// </summary>
-    private readonly ReaderWriterLockSlim _readWriteLock = new();
+    private int _isDisposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
@@ -329,28 +329,37 @@ public class MultitenantContainer : Disposable, IContainer
 
         tenantId ??= _defaultTenantId;
 
-        _readWriteLock.EnterUpgradeableReadLock();
-        try
+        if (_tenantLifetimeScopes.ContainsKey(tenantId))
         {
-            if (_tenantLifetimeScopes.ContainsKey(tenantId))
-            {
-                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
-            }
+            throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.MultitenantContainer_TenantAlreadyConfigured, tenantId));
+        }
 
-            _readWriteLock.EnterWriteLock();
-            try
-            {
-                _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
-            }
-            finally
-            {
-                _readWriteLock.ExitWriteLock();
-            }
-        }
-        finally
+        CreateTenantScope(tenantId, configuration);
+    }
+
+    /// <summary>
+    /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
+    /// This should happen very rarely, hopefully never.
+    /// </summary>
+    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder> configuration = null)
+    {
+        if (_isDisposed == 1)
         {
-            _readWriteLock.ExitUpgradeableReadLock();
+            throw new ObjectDisposedException(nameof(ApplicationContainer));
         }
+
+        var lifetimeScope = configuration != null
+            ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
+            : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
+
+        var setLifetimeScope = _tenantLifetimeScopes.GetOrAdd(tenantId, lifetimeScope);
+
+        if (setLifetimeScope != lifetimeScope)
+        {
+            lifetimeScope.Dispose();
+        }
+
+        return setLifetimeScope;
     }
 
     /// <summary>
@@ -393,26 +402,16 @@ public class MultitenantContainer : Disposable, IContainer
 
         tenantId ??= _defaultTenantId;
 
-        // we're going to change the dictionary either way, dispense with the read-check
-        _readWriteLock.EnterWriteLock();
-        try
+        var removed = false;
+        if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
         {
-            var removed = false;
-            if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
-            {
-                tenantScope.Dispose();
-
-                removed = _tenantLifetimeScopes.Remove(tenantId);
-            }
-
-            _tenantLifetimeScopes[tenantId] = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
-
-            return removed;
+            tenantScope.Dispose();
+            removed = true;
         }
-        finally
-        {
-            _readWriteLock.ExitWriteLock();
-        }
+
+        CreateTenantScope(tenantId, configuration);
+
+        return removed;
     }
 
     /// <summary>
@@ -449,57 +448,23 @@ public class MultitenantContainer : Disposable, IContainer
     {
         tenantId ??= _defaultTenantId;
 
-        var tenantScope = (ILifetimeScope)null;
-        _readWriteLock.EnterReadLock();
-        try
+        if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope))
         {
-            _tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope);
-        }
-        finally
-        {
-            _readWriteLock.ExitReadLock();
+            return tenantScope;
         }
 
-        if (tenantScope == null)
-        {
-            // just go straight to write-lock, chances of not needing it at this point would be low
-            _readWriteLock.EnterWriteLock();
-
-            try
-            {
-                // The check and [potential] scope creation are locked here to
-                // ensure atomicity. We don't want to check and then have another
-                // thread create the lifetime scope behind our backs.
-                if (!_tenantLifetimeScopes.TryGetValue(tenantId, out tenantScope) || tenantScope == null)
-                {
-                    tenantScope = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
-                    _tenantLifetimeScopes[tenantId] = tenantScope;
-                }
-            }
-            finally
-            {
-                _readWriteLock.ExitWriteLock();
-            }
-        }
-
-        return tenantScope;
+        return CreateTenantScope(tenantId);
     }
 
     /// <summary>
     /// Returns collection of all registered tenants IDs.
     /// </summary>
+#pragma warning disable CA1024
     public IEnumerable<object> GetTenants()
     {
-        _readWriteLock.EnterReadLock();
-        try
-        {
-            return new List<object>(_tenantLifetimeScopes.Keys);
-        }
-        finally
-        {
-            _readWriteLock.ExitReadLock();
-        }
+        return new List<object>(_tenantLifetimeScopes.Keys);
     }
+#pragma warning restore CA1024
 
     /// <summary>
     /// Returns whether the given tenant ID has been configured.
@@ -508,17 +473,9 @@ public class MultitenantContainer : Disposable, IContainer
     /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
     public bool TenantIsConfigured(object tenantId)
     {
-        _readWriteLock.EnterReadLock();
-        try
-        {
-            tenantId ??= _defaultTenantId;
+        tenantId ??= _defaultTenantId;
 
-            return _tenantLifetimeScopes.ContainsKey(tenantId);
-        }
-        finally
-        {
-            _readWriteLock.ExitReadLock();
-        }
+        return _tenantLifetimeScopes.ContainsKey(tenantId);
     }
 
     /// <summary>
@@ -530,23 +487,14 @@ public class MultitenantContainer : Disposable, IContainer
     {
         tenantId ??= _defaultTenantId;
 
-        // this should be a fairly rare operation, so we'll jump right to the write-lock
-        _readWriteLock.EnterWriteLock();
-        try
+        if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
         {
-            if (_tenantLifetimeScopes.TryGetValue(tenantId, out var tenantScope) && tenantScope != null)
-            {
-                tenantScope.Dispose();
+            tenantScope.Dispose();
 
-                return _tenantLifetimeScopes.Remove(tenantId);
-            }
+            return true;
+        }
 
-            return false;
-        }
-        finally
-        {
-            _readWriteLock.ExitWriteLock();
-        }
+        return false;
     }
 
     /// <summary>
@@ -554,19 +502,12 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public void ClearTenants()
     {
-        _readWriteLock.EnterWriteLock();
-        try
+        foreach (var tenantId in _tenantLifetimeScopes.Keys)
         {
-            foreach (var tenantScope in _tenantLifetimeScopes.Values)
+            if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
             {
                 tenantScope.Dispose();
             }
-
-            _tenantLifetimeScopes.Clear();
-        }
-        finally
-        {
-            _readWriteLock.ExitWriteLock();
         }
     }
 
@@ -598,26 +539,16 @@ public class MultitenantContainer : Disposable, IContainer
     /// </param>
     protected override void Dispose(bool disposing)
     {
+        Interlocked.Exchange(ref _isDisposed, 1);
+
         if (disposing)
         {
-            // Lock the lifetime scope table so no threads can add new lifetime
-            // scopes while we're disposing.
-            _readWriteLock.EnterWriteLock();
-
-            try
+            foreach (var scope in _tenantLifetimeScopes.Values)
             {
-                foreach (var scope in _tenantLifetimeScopes.Values)
-                {
-                    scope.Dispose();
-                }
+                scope.Dispose();
+            }
 
-                ApplicationContainer.Dispose();
-            }
-            finally
-            {
-                _readWriteLock.ExitWriteLock();
-                _readWriteLock.Dispose();
-            }
+            ApplicationContainer.Dispose();
         }
 
         base.Dispose(disposing);
@@ -632,24 +563,16 @@ public class MultitenantContainer : Disposable, IContainer
     /// </param>
     protected override async ValueTask DisposeAsync(bool disposing)
     {
+        Interlocked.Exchange(ref _isDisposed, 1);
+
         if (disposing)
         {
-            _readWriteLock.EnterWriteLock();
-
-            try
+            foreach (var scope in _tenantLifetimeScopes.Values)
             {
-                foreach (var scope in _tenantLifetimeScopes.Values)
-                {
-                    await scope.DisposeAsync().ConfigureAwait(false);
-                }
+                await scope.DisposeAsync().ConfigureAwait(false);
+            }
 
-                await ApplicationContainer.DisposeAsync().ConfigureAwait(false);
-            }
-            finally
-            {
-                _readWriteLock.ExitWriteLock();
-                _readWriteLock.Dispose();
-            }
+            await ApplicationContainer.DisposeAsync().ConfigureAwait(false);
         }
 
         // Do not call the base, otherwise the standard Dispose will fire.
