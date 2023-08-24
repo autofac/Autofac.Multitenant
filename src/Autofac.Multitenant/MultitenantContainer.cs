@@ -83,6 +83,11 @@ public class MultitenantContainer : Disposable, IContainer
     private readonly ConcurrentDictionary<object, ILifetimeScope> _tenantLifetimeScopes = new();
 
     /// <summary>
+    /// Flag that disallows creating a new scope while disposing or after that.
+    /// </summary>
+    private int _isDisposed = 0;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="MultitenantContainer"/> class.
     /// </summary>
     /// <param name="tenantIdentificationStrategy">
@@ -338,6 +343,11 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder> configuration = null)
     {
+        if (_isDisposed == 1)
+        {
+            throw new ObjectDisposedException(nameof(ApplicationContainer));
+        }
+
         var lifetimeScope = configuration != null
             ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
             : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
@@ -529,6 +539,8 @@ public class MultitenantContainer : Disposable, IContainer
     /// </param>
     protected override void Dispose(bool disposing)
     {
+        Interlocked.Exchange(ref _isDisposed, 1);
+
         if (disposing)
         {
             foreach (var scope in _tenantLifetimeScopes.Values)
@@ -551,6 +563,8 @@ public class MultitenantContainer : Disposable, IContainer
     /// </param>
     protected override async ValueTask DisposeAsync(bool disposing)
     {
+        Interlocked.Exchange(ref _isDisposed, 1);
+
         if (disposing)
         {
             foreach (var scope in _tenantLifetimeScopes.Values)
