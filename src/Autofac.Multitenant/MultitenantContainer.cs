@@ -341,6 +341,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
     /// This should happen very rarely, hopefully never.
     /// </summary>
+    [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
     private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder>? configuration = null)
     {
         if (_isDisposed == 1)
@@ -458,12 +459,11 @@ public class MultitenantContainer : Disposable, IContainer
     /// <summary>
     /// Returns collection of all registered tenants IDs.
     /// </summary>
-#pragma warning disable CA1024
+    [SuppressMessage("CA1024", "CA1024", Justification = "Iterating the tenants allocates memory and locks the keys, so a method is appropriate to signify it's more than a fixed set of things.")]
     public IEnumerable<object> GetTenants()
     {
         return new List<object>(_tenantLifetimeScopes.Keys);
     }
-#pragma warning restore CA1024
 
     /// <summary>
     /// Returns whether the given tenant ID has been configured.
@@ -524,7 +524,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// if the component registered requires another component be available
     /// but that required component is not available, this exception will be thrown.
     /// </exception>
-    public object ResolveComponent(ResolveRequest request)
+    public object ResolveComponent(in ResolveRequest request)
     {
         return GetCurrentTenantScope().ResolveComponent(request);
     }

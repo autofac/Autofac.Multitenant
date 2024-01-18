@@ -755,7 +755,7 @@ public class MultitenantContainerFixture
         var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
 
-        await mtc.DisposeAsync().ConfigureAwait(false);
+        await mtc.DisposeAsync();
     }
 
     [Fact]
