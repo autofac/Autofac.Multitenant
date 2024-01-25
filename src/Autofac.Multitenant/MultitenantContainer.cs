@@ -342,7 +342,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// This should happen very rarely, hopefully never.
     /// </summary>
     [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
-    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder>? configuration = null, bool forced = false)
+    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder>? configuration = null)
     {
         if (_isDisposed == 1)
         {
@@ -353,17 +353,7 @@ public class MultitenantContainer : Disposable, IContainer
             ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
             : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
 
-        var setLifetimeScope = lifetimeScope;
-        if (forced)
-        {
-            // When reconfiguring the tenant, we make sure another thread is not
-            // getting/creating the scope at the same time.
-            _tenantLifetimeScopes[tenantId] = lifetimeScope;
-        }
-        else
-        {
-            setLifetimeScope = _tenantLifetimeScopes.GetOrAdd(tenantId, lifetimeScope);
-        }
+        var setLifetimeScope = _tenantLifetimeScopes.GetOrAdd(tenantId, lifetimeScope);
 
         if (setLifetimeScope != lifetimeScope)
         {
