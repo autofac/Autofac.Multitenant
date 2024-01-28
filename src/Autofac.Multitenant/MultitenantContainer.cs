@@ -394,6 +394,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <returns><c>true</c> if an existing configuration was removed; otherwise, <c>false</c>.</returns>
     /// <seealso cref="ConfigurationActionBuilder"/>
     /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
+    [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
     public bool ReconfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
     {
         if (configuration == null)
@@ -401,18 +402,35 @@ public class MultitenantContainer : Disposable, IContainer
             throw new ArgumentNullException(nameof(configuration));
         }
 
-        tenantId ??= _defaultTenantId;
-
-        var removed = false;
-        if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
+        if (_isDisposed == 1)
         {
-            tenantScope.Dispose();
-            removed = true;
+            throw new ObjectDisposedException(nameof(ApplicationContainer));
         }
 
-        CreateTenantScope(tenantId, configuration);
+        tenantId ??= _defaultTenantId;
 
-        return removed;
+        var lifetimeScope = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+
+        ILifetimeScope? disposedLifetimeScope = null;
+        _tenantLifetimeScopes.AddOrUpdate(
+            tenantId,
+            _ => lifetimeScope,
+            (_, updatedLifetimeScope) =>
+            {
+                // We defer the existing scope Dispose()
+                // as we prefer enabling the new scope as quickly
+                // as possible.
+                disposedLifetimeScope = updatedLifetimeScope;
+                return lifetimeScope;
+            });
+
+        if (disposedLifetimeScope == null)
+        {
+            return false;
+        }
+
+        disposedLifetimeScope.Dispose();
+        return true;
     }
 
     /// <summary>

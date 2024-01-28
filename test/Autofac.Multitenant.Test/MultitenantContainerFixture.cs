@@ -568,6 +568,52 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public void ReconfigureTenant_RequiresConfiguration()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
+
+        Assert.Throws<ArgumentNullException>(() => mtc.ReconfigureTenant("tenant1", null));
+    }
+
+    [Fact]
+    public void ReconfigureTenant_ThrowsAfterDisposal()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => mtc.ReconfigureTenant("tenant1", _ => { }));
+    }
+
+    [Fact]
+    public void ReconfigureTenant_AddLifetimeScope()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
+
+        // Simulate another thread playing with the MTC
+        mtc.RemoveTenant("tenant1");
+
+        mtc.ReconfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces().SingleInstance());
+
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
     public void GetTenants_CheckRegistered()
     {
         var strategy = new StubTenantIdentificationStrategy()
