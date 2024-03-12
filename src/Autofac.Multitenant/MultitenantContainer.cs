@@ -320,7 +320,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// </exception>
     /// <seealso cref="ConfigurationActionBuilder"/>
     /// <seealso cref="ReconfigureTenant(object, Action{ContainerBuilder})"/>
-    public void ConfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
+    public void ConfigureTenant(object? tenantId, Action<ContainerBuilder> configuration)
     {
         if (configuration == null)
         {
