@@ -30,7 +30,7 @@ public class TenantIdentificationStrategyExtensionsFixture
     [Fact]
     public void IdentifyTenant_NullStrategy()
     {
-        ITenantIdentificationStrategy strategy = null;
+        ITenantIdentificationStrategy strategy = null!;
         Assert.Throws<ArgumentNullException>(() => strategy.IdentifyTenant<Guid>());
     }
 

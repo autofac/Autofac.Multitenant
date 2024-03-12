@@ -123,7 +123,7 @@ public class MultitenantContainerFixture
             TenantId = "tenant1",
         };
         using var mtc = new MultitenantContainer(strategy, builder.Build());
-        Assert.Throws<ArgumentNullException>(() => mtc.ConfigureTenant("tenant1", null));
+        Assert.Throws<ArgumentNullException>(() => mtc.ConfigureTenant("tenant1", null!));
     }
 
     [Fact]
@@ -142,13 +142,13 @@ public class MultitenantContainerFixture
     [Fact]
     public void Ctor_NullApplicationContainer()
     {
-        Assert.Throws<ArgumentNullException>(() => new MultitenantContainer(new StubTenantIdentificationStrategy(), null));
+        Assert.Throws<ArgumentNullException>(() => new MultitenantContainer(new StubTenantIdentificationStrategy(), null!));
     }
 
     [Fact]
     public void Ctor_NullTenantIdentificationStrategy()
     {
-        Assert.Throws<ArgumentNullException>(() => new MultitenantContainer(null, new ContainerBuilder().Build()));
+        Assert.Throws<ArgumentNullException>(() => new MultitenantContainer(null!, new ContainerBuilder().Build()));
     }
 
     [Fact]
@@ -578,7 +578,7 @@ public class MultitenantContainerFixture
         using var mtc = new MultitenantContainer(strategy, builder.Build());
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
 
-        Assert.Throws<ArgumentNullException>(() => mtc.ReconfigureTenant("tenant1", null));
+        Assert.Throws<ArgumentNullException>(() => mtc.ReconfigureTenant("tenant1", null!));
     }
 
     [Fact]
