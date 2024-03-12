@@ -20,5 +20,5 @@ public interface ITenantIdentificationStrategy
     /// if not.
     /// </returns>
     [SuppressMessage("Microsoft.Design", "CA1007:UseGenericsWhereAppropriate", Justification = "Tenant identifiers are objects.")]
-    bool TryIdentifyTenant(out object tenantId);
+    bool TryIdentifyTenant(out object? tenantId);
 }

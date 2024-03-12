@@ -31,9 +31,9 @@ public static class TenantIdentificationStrategyExtensions
             throw new ArgumentNullException(nameof(strategy));
         }
 
-        if (strategy.TryIdentifyTenant(out object id))
+        if (strategy.TryIdentifyTenant(out var id))
         {
-            return (T)id;
+            return (T?)id;
         }
 
         return default;

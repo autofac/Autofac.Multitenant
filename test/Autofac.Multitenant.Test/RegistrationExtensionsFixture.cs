@@ -11,7 +11,7 @@ public class RegistrationExtensionsFixture
     [Fact]
     public void InstancePerTenant_NullRegistration()
     {
-        IRegistrationBuilder<StubDependency1Impl1, ConcreteReflectionActivatorData, SingleRegistrationStyle> registration = null;
+        IRegistrationBuilder<StubDependency1Impl1, ConcreteReflectionActivatorData, SingleRegistrationStyle> registration = null!;
         Assert.Throws<ArgumentNullException>(() => registration.InstancePerTenant());
     }
 
