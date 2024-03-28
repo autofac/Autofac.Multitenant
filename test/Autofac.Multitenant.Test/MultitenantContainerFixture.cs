@@ -318,6 +318,37 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public void Resolve_DefaultTenantFallbackToApplicationContainer()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = null,
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        Assert.IsType<StubDependency1Impl1>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
+    public void Resolve_ResolvesDefaultTenantSpecificRegistrations()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().As<IStubDependency1>();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = null,
+        };
+        using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant(null, b => b.RegisterType<StubDependency1Impl2>().As<IStubDependency1>());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().As<IStubDependency1>());
+
+        Assert.IsType<StubDependency1Impl2>(mtc.Resolve<IStubDependency1>());
+        strategy.TenantId = "tenant2";
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
     public void Resolve_ResolvesTenantSpecificRegistrations()
     {
         var builder = new ContainerBuilder();
@@ -621,12 +652,13 @@ public class MultitenantContainerFixture
             TenantId = "tenant1",
         };
         using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant(null, b => b.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces());
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces());
         mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
         mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
         var registeredTenants = mtc.GetTenants().ToList();
-        Assert.Equal(3, registeredTenants.Count);
+        Assert.Equal(4, registeredTenants.Count);
 
         foreach (var tenantId in registeredTenants)
         {
