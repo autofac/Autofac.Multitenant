@@ -19,6 +19,15 @@ public interface ITenantIdentificationStrategy
     /// <see langword="true" /> if the tenant could be identified; <see langword="false" />
     /// if not.
     /// </returns>
+    /// <remarks>
+    /// <para>
+    /// It is technically possible to allow the tenant to be identified but
+    /// still have the tenant ID come out as <see langword="null"/>. If this
+    /// happens, it indicates the strategy has intentionally chosen the "default
+    /// tenant" as the active tenant rather than requiring fallback logic to
+    /// occur.
+    /// </para>
+    /// </remarks>
     [SuppressMessage("Microsoft.Design", "CA1007:UseGenericsWhereAppropriate", Justification = "Tenant identifiers are objects.")]
     bool TryIdentifyTenant(out object? tenantId);
 }
