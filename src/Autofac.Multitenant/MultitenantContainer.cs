@@ -395,7 +395,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <seealso cref="ConfigurationActionBuilder"/>
     /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
     [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
-    public bool ReconfigureTenant(object tenantId, Action<ContainerBuilder> configuration)
+    public bool ReconfigureTenant(object? tenantId, Action<ContainerBuilder> configuration)
     {
         if (configuration == null)
         {
@@ -488,7 +488,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     /// <param name="tenantId">The tenant ID to test.</param>
     /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
-    public bool TenantIsConfigured(object tenantId)
+    public bool TenantIsConfigured(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
 
@@ -500,7 +500,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     /// <param name="tenantId">The ID of the tenant to dispose.</param>
     /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
-    public bool RemoveTenant(object tenantId)
+    public bool RemoveTenant(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
 
