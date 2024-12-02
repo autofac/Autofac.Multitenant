@@ -434,6 +434,77 @@ public class MultitenantContainer : Disposable, IContainer
     }
 
     /// <summary>
+    /// Allows re-configuration of tenant-specific components by closing and rebuilding
+    /// the tenant scope.
+    /// The closed scope is disposed asynchronously.
+    /// </summary>
+    /// <param name="tenantId">
+    /// The ID of the tenant for which configuration is occurring. If this
+    /// value is <see langword="null" />, configuration occurs for the "default
+    /// tenant" - the tenant that is used when no tenant ID can be determined.
+    /// </param>
+    /// <param name="configuration">
+    /// An action that uses a <see cref="ContainerBuilder"/> to set
+    /// up registrations for the tenant.
+    /// </param>
+    /// <remarks>
+    /// <para>
+    /// If you need to configure a tenant across multiple registration
+    /// calls, consider using a <see cref="ConfigurationActionBuilder"/>
+    /// and configuring the tenant using the aggregate configuration
+    /// action it produces.
+    /// </para>
+    /// <para>
+    /// This method is intended for use after application start-up.  During start-up, please
+    /// use <see cref="ConfigureTenant(object, Action{ContainerBuilder})"/>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
+    /// </exception>
+    /// <returns><c>true</c> if an existing configuration was removed; otherwise, <c>false</c>.</returns>
+    /// <seealso cref="ConfigurationActionBuilder"/>
+    /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
+    [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
+    public async ValueTask<bool> ReconfigureTenantAsync(object? tenantId, Action<ContainerBuilder> configuration)
+    {
+        if (configuration == null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        if (_isDisposed == 1)
+        {
+            throw new ObjectDisposedException(nameof(ApplicationContainer));
+        }
+
+        tenantId ??= _defaultTenantId;
+
+        var lifetimeScope = ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration);
+
+        ILifetimeScope? disposedLifetimeScope = null;
+        _tenantLifetimeScopes.AddOrUpdate(
+            tenantId,
+            _ => lifetimeScope,
+            (_, updatedLifetimeScope) =>
+            {
+                // We defer the existing scope DisposeAsync()
+                // as we prefer enabling the new scope as quickly
+                // as possible.
+                disposedLifetimeScope = updatedLifetimeScope;
+                return lifetimeScope;
+            });
+
+        if (disposedLifetimeScope == null)
+        {
+            return false;
+        }
+
+        await disposedLifetimeScope.DisposeAsync().ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>
     /// Retrieves the lifetime scope for the current tenant based on execution
     /// context.
     /// </summary>
@@ -515,6 +586,25 @@ public class MultitenantContainer : Disposable, IContainer
     }
 
     /// <summary>
+    /// Removes the tenant configuration and disposes the associated lifetime scope asynchronously.
+    /// </summary>
+    /// <param name="tenantId">The ID of the tenant to dispose.</param>
+    /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
+    public async ValueTask<bool> RemoveTenantAsync(object? tenantId)
+    {
+        tenantId ??= _defaultTenantId;
+
+        if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
+        {
+            await tenantScope.DisposeAsync().ConfigureAwait(false);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Clears all tenants configurations and disposes the associated lifetime scopes.
     /// </summary>
     public void ClearTenants()
@@ -524,6 +614,20 @@ public class MultitenantContainer : Disposable, IContainer
             if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
             {
                 tenantScope.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears all tenants configurations and disposes the associated lifetime scopes asynchronously.
+    /// </summary>
+    public async ValueTask ClearTenantsAsync()
+    {
+        foreach (var tenantId in _tenantLifetimeScopes.Keys)
+        {
+            if (_tenantLifetimeScopes.TryRemove(tenantId, out var tenantScope))
+            {
+                await tenantScope.DisposeAsync().ConfigureAwait(false);
             }
         }
     }
