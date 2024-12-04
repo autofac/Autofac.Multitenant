@@ -480,6 +480,23 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task RemoveTenantAsync_ShowFallback()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+        await mtc.RemoveTenantAsync("tenant1");
+
+        Assert.IsType<StubDependency1Impl1>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
     public void RemoveTenant_ShowDisposal()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -497,6 +514,23 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task RemoveTenantAsync_ShowDisposal()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces());
+
+        var tenant1scope = mtc.GetTenantScope("tenant1");
+
+        await mtc.RemoveTenantAsync("tenant1");
+
+        Assert.Throws<ObjectDisposedException>(() => tenant1scope.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
     public void RemoveTenant_ConfigureAfterRemove()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -509,6 +543,25 @@ public class MultitenantContainerFixture
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
 
         mtc.RemoveTenant("tenant1");
+
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
+    public async Task RemoveTenantAsync_ConfigureAfterRemove()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+        await mtc.RemoveTenantAsync("tenant1");
 
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
@@ -536,6 +589,26 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task RemoveTenantAsync_ConfigureAfterRemoveFailCaseDemo()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+        await mtc.RemoveTenantAsync("tenant1");
+
+        // contextual tenant is still "tenant1"; this will force creation of container-configured tenant
+        mtc.Resolve<IStubDependency1>();
+
+        Assert.Throws<InvalidOperationException>(() => mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces()));
+    }
+
+    [Fact]
     public void RemoveTenant_TenantSingleton()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -552,6 +625,22 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task RemoveTenantAsync_TenantSingleton()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+        var stub = mtc.Resolve<StubDisposableDependency>();
+
+        await mtc.RemoveTenantAsync("tenant1");
+
+        Assert.True(stub.IsDisposed);
+    }
+
+    [Fact]
     public void RemoveTenant_ReturnsFalseWhenNotPresent()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -562,6 +651,21 @@ public class MultitenantContainerFixture
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
 
         var removed = mtc.RemoveTenant("tenant2");
+
+        Assert.False(removed);
+    }
+
+    [Fact]
+    public async Task RemoveTenantAsync_ReturnsFalseWhenNotPresent()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+
+        var removed = await mtc.RemoveTenantAsync("tenant2");
 
         Assert.False(removed);
     }
@@ -583,6 +687,22 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task ReconfigureTenantAsync_Reconfigure()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.Resolve<IStubDependency1>();
+
+        await mtc.ReconfigureTenantAsync("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
     public void ReconfigureTenant_ReconfigureSingleton()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -594,6 +714,22 @@ public class MultitenantContainerFixture
         mtc.Resolve<IStubDependency1>();
 
         mtc.ReconfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces().SingleInstance());
+
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
+    public async Task ReconfigureTenantAsync_ReconfigureSingleton()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
+        mtc.Resolve<IStubDependency1>();
+
+        await mtc.ReconfigureTenantAsync("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces().SingleInstance());
 
         Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
     }
@@ -613,6 +749,20 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task ReconfigureTenantAsync_RequiresConfiguration()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
+
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await mtc.ReconfigureTenantAsync("tenant1", null!));
+    }
+
+    [Fact]
     public void ReconfigureTenant_ThrowsAfterDisposal()
     {
         var builder = new ContainerBuilder();
@@ -623,6 +773,19 @@ public class MultitenantContainerFixture
         using var mtc = new MultitenantContainer(strategy, builder.Build());
         mtc.Dispose();
         Assert.Throws<ObjectDisposedException>(() => mtc.ReconfigureTenant("tenant1", _ => { }));
+    }
+
+    [Fact]
+    public async Task ReconfigureTenantAsync_ThrowsAfterDisposal()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        await mtc.DisposeAsync();
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await mtc.ReconfigureTenantAsync("tenant1", _ => { }));
     }
 
     [Fact]
@@ -640,6 +803,25 @@ public class MultitenantContainerFixture
         mtc.RemoveTenant("tenant1");
 
         mtc.ReconfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces().SingleInstance());
+
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
+    public async Task ReconfigureTenantAsync_AddLifetimeScope()
+    {
+        var builder = new ContainerBuilder();
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces().SingleInstance());
+
+        // Simulate another thread playing with the MTC
+        await mtc.RemoveTenantAsync("tenant1");
+
+        await mtc.ReconfigureTenantAsync("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces().SingleInstance());
 
         Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
     }
@@ -687,6 +869,25 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task ClearTenantsAsync_EnsureRegisteredTenantsCountIsZero()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        await mtc.ClearTenantsAsync();
+
+        Assert.Empty(mtc.GetTenants());
+    }
+
+    [Fact]
     public void ClearTenants_ShowFallback()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -702,6 +903,30 @@ public class MultitenantContainerFixture
 
         var registeredTenants = mtc.GetTenants();
         mtc.ClearTenants();
+
+        foreach (var tenantId in registeredTenants)
+        {
+            strategy.TenantId = tenantId;
+            Assert.IsType<StubDependency1Impl1>(mtc.Resolve<IStubDependency1>());
+        }
+    }
+
+    [Fact]
+    public async Task ClearTenantsAsync_ShowFallback()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        var registeredTenants = mtc.GetTenants();
+        await mtc.ClearTenantsAsync();
 
         foreach (var tenantId in registeredTenants)
         {
@@ -738,6 +963,33 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task ClearTenantsAsync_ShowDisposal()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        var registeredTenants = mtc.GetTenants();
+        var tenantScopes = new List<ILifetimeScope>();
+        foreach (var tenantId in registeredTenants)
+        {
+            tenantScopes.Add(mtc.GetTenantScope(tenantId));
+        }
+
+        await mtc.ClearTenantsAsync();
+
+        foreach (var tenantScope in tenantScopes)
+        {
+            Assert.Throws<ObjectDisposedException>(() => tenantScope.Resolve<IStubDependency1>());
+        }
+    }
+
+    [Fact]
     public void ClearTenants_ConfigureAfterClearing()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -752,6 +1004,33 @@ public class MultitenantContainerFixture
         mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
 
         mtc.ClearTenants();
+
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+
+        Assert.IsType<StubDependency1Impl3>(mtc.Resolve<IStubDependency1>());
+        strategy.TenantId = "tenant2";
+        Assert.IsType<StubDependency1Impl2>(mtc.Resolve<IStubDependency1>());
+        strategy.TenantId = "tenant3";
+        Assert.IsType<StubDependency1Impl2>(mtc.Resolve<IStubDependency1>());
+    }
+
+    [Fact]
+    public async Task ClearTenantsAsync_ConfigureAfterClearing()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        await mtc.ClearTenantsAsync();
 
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
         mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
@@ -796,6 +1075,37 @@ public class MultitenantContainerFixture
     }
 
     [Fact]
+    public async Task ClearTenantsAsync_ConfigureAfterClearingFailCaseDemo()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        var builder = new ContainerBuilder();
+        builder.RegisterType<StubDependency1Impl1>().AsImplementedInterfaces();
+        await using var mtc = new MultitenantContainer(strategy, builder.Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces());
+
+        await mtc.ClearTenantsAsync();
+
+        // contextual tenant is still "tenant1"; this will force creation of container-configured tenant
+        mtc.Resolve<IStubDependency1>();
+        Assert.Throws<InvalidOperationException>(() => mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl3>().AsImplementedInterfaces()));
+
+        // contextual tenant is still "tenant2"; this will force creation of container-configured tenant
+        strategy.TenantId = "tenant2";
+        mtc.Resolve<IStubDependency1>();
+        Assert.Throws<InvalidOperationException>(() => mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces()));
+
+        // contextual tenant is still "tenant3"; this will force creation of container-configured tenant
+        strategy.TenantId = "tenant3";
+        mtc.Resolve<IStubDependency1>();
+        Assert.Throws<InvalidOperationException>(() => mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDependency1Impl2>().AsImplementedInterfaces()));
+    }
+
+    [Fact]
     public void ClearTenants_TenantSingleton()
     {
         var strategy = new StubTenantIdentificationStrategy()
@@ -816,6 +1126,34 @@ public class MultitenantContainerFixture
         }
 
         mtc.ClearTenants();
+
+        foreach (var tenantStub in tenantsStubs)
+        {
+            Assert.True(tenantStub.IsDisposed);
+        }
+    }
+
+    [Fact]
+    public async Task ClearTenantsAsync_TenantSingleton()
+    {
+        var strategy = new StubTenantIdentificationStrategy()
+        {
+            TenantId = "tenant1",
+        };
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+        mtc.ConfigureTenant("tenant2", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+        mtc.ConfigureTenant("tenant3", b => b.RegisterType<StubDisposableDependency>().SingleInstance());
+
+        var registeredTenants = mtc.GetTenants();
+        var tenantsStubs = new List<StubDisposableDependency>();
+        foreach (var tenantId in registeredTenants)
+        {
+            strategy.TenantId = tenantId;
+            tenantsStubs.Add(mtc.Resolve<StubDisposableDependency>());
+        }
+
+        await mtc.ClearTenantsAsync();
 
         foreach (var tenantStub in tenantsStubs)
         {

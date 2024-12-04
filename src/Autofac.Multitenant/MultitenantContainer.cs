@@ -435,8 +435,7 @@ public class MultitenantContainer : Disposable, IContainer
 
     /// <summary>
     /// Allows re-configuration of tenant-specific components by closing and rebuilding
-    /// the tenant scope.
-    /// The closed scope is disposed asynchronously.
+    /// the tenant scope. The closed scope is disposed asynchronously.
     /// </summary>
     /// <param name="tenantId">
     /// The ID of the tenant for which configuration is occurring. If this
