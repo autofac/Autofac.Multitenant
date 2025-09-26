@@ -202,6 +202,9 @@ public class MultitenantContainer : Disposable, IContainer
     /// </value>
     public ITenantIdentificationStrategy TenantIdentificationStrategy { get; private set; }
 
+    /// <inheritdoc />
+    public DiagnosticListener DiagnosticSource => ApplicationContainer.DiagnosticSource;
+
     /// <summary>
     /// Begin a new nested scope for the current tenant. Component instances created via the new scope
     /// will be disposed along with it.
@@ -338,32 +341,6 @@ public class MultitenantContainer : Disposable, IContainer
     }
 
     /// <summary>
-    /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
-    /// This should happen very rarely, hopefully never.
-    /// </summary>
-    [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
-    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder>? configuration = null)
-    {
-        if (_isDisposed == 1)
-        {
-            throw new ObjectDisposedException(nameof(ApplicationContainer));
-        }
-
-        var lifetimeScope = configuration != null
-            ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
-            : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
-
-        var setLifetimeScope = _tenantLifetimeScopes.GetOrAdd(tenantId, lifetimeScope);
-
-        if (setLifetimeScope != lifetimeScope)
-        {
-            lifetimeScope.Dispose();
-        }
-
-        return setLifetimeScope;
-    }
-
-    /// <summary>
     /// Allows re-configuration of tenant-specific components by closing and rebuilding
     /// the tenant scope.
     /// </summary>
@@ -391,10 +368,9 @@ public class MultitenantContainer : Disposable, IContainer
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
     /// </exception>
-    /// <returns><c>true</c> if an existing configuration was removed; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if an existing configuration was removed; otherwise, <see langword="false"/>.</returns>
     /// <seealso cref="ConfigurationActionBuilder"/>
     /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
-    [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
     public bool ReconfigureTenant(object? tenantId, Action<ContainerBuilder> configuration)
     {
         if (configuration == null)
@@ -461,10 +437,9 @@ public class MultitenantContainer : Disposable, IContainer
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="configuration" /> is <see langword="null" />.
     /// </exception>
-    /// <returns><c>true</c> if an existing configuration was removed; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if an existing configuration was removed; otherwise, <see langword="false"/>.</returns>
     /// <seealso cref="ConfigurationActionBuilder"/>
     /// <seealso cref="ConfigureTenant(object, Action{ContainerBuilder})"/>
-    [SuppressMessage("CA1513", "CA1513", Justification = "ObjectDisposedException.ThrowIf is not available in all target frameworks.")]
     public async ValueTask<bool> ReconfigureTenantAsync(object? tenantId, Action<ContainerBuilder> configuration)
     {
         if (configuration == null)
@@ -514,6 +489,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// using <see cref="GetTenantScope"/>.
     /// </para>
     /// </remarks>
+    /// <returns>The current tenant's lifetime scope.</returns>
     public ILifetimeScope GetCurrentTenantScope()
     {
         if (TenantIdentificationStrategy.TryIdentifyTenant(out var tenantId))
@@ -532,6 +508,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// value is <see langword="null" />, the scope is returned for the "default
     /// tenant" - the tenant that is used when no tenant ID can be determined.
     /// </param>
+    /// <returns>The specified tenant's lifetime scope.</returns>
     public ILifetimeScope GetTenantScope(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
@@ -547,6 +524,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <summary>
     /// Returns collection of all registered tenants IDs.
     /// </summary>
+    /// <returns>All registered tenant IDs.</returns>
     [SuppressMessage("CA1024", "CA1024", Justification = "Iterating the tenants allocates memory and locks the keys, so a method is appropriate to signify it's more than a fixed set of things.")]
     public IEnumerable<object> GetTenants()
     {
@@ -557,7 +535,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// Returns whether the given tenant ID has been configured.
     /// </summary>
     /// <param name="tenantId">The tenant ID to test.</param>
-    /// <returns>If configured, <c>true</c>; otherwise <c>false</c>.</returns>
+    /// <returns>If configured, <see langword="true"/>; otherwise <see langword="false"/>.</returns>
     public bool TenantIsConfigured(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
@@ -569,7 +547,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// Removes the tenant configuration and disposes the associated lifetime scope.
     /// </summary>
     /// <param name="tenantId">The ID of the tenant to dispose.</param>
-    /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if the tenant-collection was modified; otherwise, <see langword="false"/>.</returns>
     public bool RemoveTenant(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
@@ -588,7 +566,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// Removes the tenant configuration and disposes the associated lifetime scope asynchronously.
     /// </summary>
     /// <param name="tenantId">The ID of the tenant to dispose.</param>
-    /// <returns><c>true</c> if the tenant-collection was modified; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if the tenant-collection was modified; otherwise, <see langword="false"/>.</returns>
     public async ValueTask<bool> RemoveTenantAsync(object? tenantId)
     {
         tenantId ??= _defaultTenantId;
@@ -620,6 +598,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <summary>
     /// Clears all tenants configurations and disposes the associated lifetime scopes asynchronously.
     /// </summary>
+    /// <returns>A task to await tenant disposal.</returns>
     public async ValueTask ClearTenantsAsync()
     {
         foreach (var tenantId in _tenantLifetimeScopes.Keys)
@@ -681,6 +660,7 @@ public class MultitenantContainer : Disposable, IContainer
     /// <see langword="true" /> to release both managed and unmanaged resources;
     /// <see langword="false" /> to release only unmanaged resources.
     /// </param>
+    /// <returns>A task to await disposal.</returns>
     protected override async ValueTask DisposeAsync(bool disposing)
     {
         Interlocked.Exchange(ref _isDisposed, 1);
@@ -698,6 +678,28 @@ public class MultitenantContainer : Disposable, IContainer
         // Do not call the base, otherwise the standard Dispose will fire.
     }
 
-    /// <inheritdoc />
-    public DiagnosticListener DiagnosticSource => ApplicationContainer.DiagnosticSource;
+    /// <summary>
+    /// Creates new tenant scope without any locking. Uses optimistic approach - creates the scope and in case it fails to insert to the dictionary it's immediately disposed.
+    /// This should happen very rarely, hopefully never.
+    /// </summary>
+    private ILifetimeScope CreateTenantScope(object tenantId, Action<ContainerBuilder>? configuration = null)
+    {
+        if (_isDisposed == 1)
+        {
+            throw new ObjectDisposedException(nameof(ApplicationContainer));
+        }
+
+        var lifetimeScope = configuration != null
+            ? ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag, configuration)
+            : ApplicationContainer.BeginLifetimeScope(TenantLifetimeScopeTag);
+
+        var setLifetimeScope = _tenantLifetimeScopes.GetOrAdd(tenantId, lifetimeScope);
+
+        if (setLifetimeScope != lifetimeScope)
+        {
+            lifetimeScope.Dispose();
+        }
+
+        return setLifetimeScope;
+    }
 }
