@@ -14,7 +14,7 @@
       },
       "label": "build",
       "problemMatcher": "$msCompile",
-      "type": "process"
+      "type": "shell"
     },
     {
       "args": [
@@ -25,11 +25,8 @@
         "--results-directory",
         "\"artifacts/coverage\"",
         "--logger:trx",
-        "/p:CoverletOutput=\"${workspaceFolder}/artifacts/coverage/\"",
-        "/p:CollectCoverage=true",
-        "/p:CoverletOutputFormat=lcov",
-        "/p:Exclude=\"[System.*]*\"",
-        "-m:1"
+        "--collect:\"XPlat Code Coverage\"",
+        "--settings:build/Coverage.runsettings"
       ],
       "command": "dotnet",
       "group": {

@@ -20,8 +20,6 @@
   "coverage-gutters.coverageFileNames": [
     "coverage.info"
   ],
-  "dotnet-test-explorer.runInParallel": true,
-  "dotnet-test-explorer.testProjectPath": "test/**/*.Test.csproj",
   "dotnet.defaultSolution": "Autofac.Multitenant.sln",
   "files.watcherExclude": {
     "**/target": true
