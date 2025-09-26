@@ -27,6 +27,7 @@ public static class RegistrationExtensions
     /// component created per tenant.
     /// </para>
     /// </remarks>
+    /// <returns>The registration for continued configuration.</returns>
     public static IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> InstancePerTenant<TLimit, TActivatorData, TRegistrationStyle>(
         this IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registration)
     {
