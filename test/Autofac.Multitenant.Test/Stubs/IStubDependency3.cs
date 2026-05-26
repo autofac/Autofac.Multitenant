@@ -8,5 +8,8 @@ namespace Autofac.Multitenant.Test.Stubs;
 /// </summary>
 public interface IStubDependency3
 {
-    IStubDependency1 Dependency { get; }
+    IStubDependency1 Dependency
+    {
+        get;
+    }
 }

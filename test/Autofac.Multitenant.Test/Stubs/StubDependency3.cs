@@ -10,5 +10,8 @@ public class StubDependency3 : IStubDependency3
         Dependency = depends;
     }
 
-    public IStubDependency1 Dependency { get; private set; }
+    public IStubDependency1 Dependency
+    {
+        get; private set;
+    }
 }

@@ -10,9 +10,15 @@ public class StubTenantIdentificationStrategy : ITenantIdentificationStrategy
         IdentificationSuccess = true;
     }
 
-    public bool IdentificationSuccess { get; set; }
+    public bool IdentificationSuccess
+    {
+        get; set;
+    }
 
-    public object? TenantId { get; set; }
+    public object? TenantId
+    {
+        get; set;
+    }
 
     public bool TryIdentifyTenant(out object? tenantId)
     {

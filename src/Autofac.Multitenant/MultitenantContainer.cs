@@ -112,9 +112,15 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public event EventHandler<LifetimeScopeBeginningEventArgs> ChildLifetimeScopeBeginning
     {
-        add { GetCurrentTenantScope().ChildLifetimeScopeBeginning += value; }
+        add
+        {
+            GetCurrentTenantScope().ChildLifetimeScopeBeginning += value;
+        }
 
-        remove { GetCurrentTenantScope().ChildLifetimeScopeBeginning -= value; }
+        remove
+        {
+            GetCurrentTenantScope().ChildLifetimeScopeBeginning -= value;
+        }
     }
 
     /// <summary>
@@ -122,9 +128,15 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public event EventHandler<LifetimeScopeEndingEventArgs> CurrentScopeEnding
     {
-        add { GetCurrentTenantScope().CurrentScopeEnding += value; }
+        add
+        {
+            GetCurrentTenantScope().CurrentScopeEnding += value;
+        }
 
-        remove { GetCurrentTenantScope().CurrentScopeEnding -= value; }
+        remove
+        {
+            GetCurrentTenantScope().CurrentScopeEnding -= value;
+        }
     }
 
     /// <summary>
@@ -132,9 +144,15 @@ public class MultitenantContainer : Disposable, IContainer
     /// </summary>
     public event EventHandler<ResolveOperationBeginningEventArgs> ResolveOperationBeginning
     {
-        add { GetCurrentTenantScope().ResolveOperationBeginning += value; }
+        add
+        {
+            GetCurrentTenantScope().ResolveOperationBeginning += value;
+        }
 
-        remove { GetCurrentTenantScope().ResolveOperationBeginning -= value; }
+        remove
+        {
+            GetCurrentTenantScope().ResolveOperationBeginning -= value;
+        }
     }
 
     /// <summary>
@@ -144,7 +162,10 @@ public class MultitenantContainer : Disposable, IContainer
     /// An <see cref="IContainer"/> on which all tenant lifetime
     /// scopes will be based.
     /// </value>
-    public IContainer ApplicationContainer { get; private set; }
+    public IContainer ApplicationContainer
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// Gets the current tenant's registry that associates services with the
@@ -156,7 +177,10 @@ public class MultitenantContainer : Disposable, IContainer
     /// </value>
     public IComponentRegistry ComponentRegistry
     {
-        get { return GetCurrentTenantScope().ComponentRegistry; }
+        get
+        {
+            return GetCurrentTenantScope().ComponentRegistry;
+        }
     }
 
     /// <summary>
@@ -173,7 +197,10 @@ public class MultitenantContainer : Disposable, IContainer
     /// </remarks>
     public IDisposer Disposer
     {
-        get { return GetCurrentTenantScope().Disposer; }
+        get
+        {
+            return GetCurrentTenantScope().Disposer;
+        }
     }
 
     /// <summary>
@@ -190,7 +217,10 @@ public class MultitenantContainer : Disposable, IContainer
     /// <seealso cref="Builder.IRegistrationBuilder{T, U, V}.InstancePerMatchingLifetimeScope(object[])"/>
     public object Tag
     {
-        get { return GetCurrentTenantScope().Tag; }
+        get
+        {
+            return GetCurrentTenantScope().Tag;
+        }
     }
 
     /// <summary>
@@ -200,7 +230,10 @@ public class MultitenantContainer : Disposable, IContainer
     /// An <see cref="ITenantIdentificationStrategy"/>
     /// used to identify the current tenant from the execution context.
     /// </value>
-    public ITenantIdentificationStrategy TenantIdentificationStrategy { get; private set; }
+    public ITenantIdentificationStrategy TenantIdentificationStrategy
+    {
+        get; private set;
+    }
 
     /// <inheritdoc />
     public DiagnosticListener DiagnosticSource => ApplicationContainer.DiagnosticSource;

@@ -9,7 +9,10 @@ public sealed class StubDisposableDependency : IDisposable
      * We need it for testing if Dispose was called, not actually to do
      * the standard Dispose cleanup. */
 
-    public bool IsDisposed { get; set; }
+    public bool IsDisposed
+    {
+        get; set;
+    }
 
     public void Dispose()
     {
