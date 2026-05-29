@@ -1168,10 +1168,11 @@ public class MultitenantContainerFixture
         {
             TenantId = "tenant1",
         };
-        var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
+        await using var mtc = new MultitenantContainer(strategy, new ContainerBuilder().Build());
         mtc.ConfigureTenant("tenant1", b => b.RegisterType<StubDependency1Impl1>().As<IStubDependency1>());
 
-        await mtc.DisposeAsync();
+        var exception = await Record.ExceptionAsync(async () => await mtc.DisposeAsync());
+        Assert.Null(exception);
     }
 
     [Fact]
