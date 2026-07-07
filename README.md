@@ -2,11 +2,9 @@
 
 Multitenant application support for [Autofac IoC](https://github.com/autofac/Autofac).
 
-[![Build status](https://ci.appveyor.com/api/projects/status/9120t73i97ywdoav?svg=true)](https://ci.appveyor.com/project/Autofac/autofac-multitenant) [![codecov](https://codecov.io/gh/Autofac/Autofac.Multitenant/branch/develop/graph/badge.svg)](https://codecov.io/gh/Autofac/Autofac.Multitenant)
+[![Build status](https://github.com/autofac/Autofac.Multitenant/actions/workflows/main.yml/badge.svg)](https://github.com/autofac/Autofac.Multitenant/actions/workflows/main.yml) [![codecov](https://codecov.io/gh/Autofac/Autofac.Multitenant/branch/develop/graph/badge.svg)](https://codecov.io/gh/Autofac/Autofac.Multitenant) [![NuGet](https://img.shields.io/nuget/v/Autofac.Multitenant.svg)](https://nuget.org/packages/Autofac.Multitenant)
 
 Please file issues and pull requests for this package in this repository rather than in the Autofac core repo.
-
-**BREAKING CHANGE**: As of v4.0.0, the `Autofac.Extras.Multitenant` package is `Autofac.Multitenant`.
 
 - [Documentation](https://autofac.readthedocs.io/en/latest/advanced/multitenant.html)
 - [NuGet](https://www.nuget.org/packages/Autofac.Multitenant)
@@ -15,7 +13,7 @@ Please file issues and pull requests for this package in this repository rather 
 
 ## Quick Start
 
-```c#
+```csharp
 // First, create your application-level defaults using a standard
 // ContainerBuilder, just as you are used to.
 var builder = new ContainerBuilder();
